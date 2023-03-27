@@ -167,57 +167,32 @@ public class PandemicGame {
 
     private static boolean processUserCommand(int userInput) {
         switch (userInput) {
-            case QUIT:
+            case QUIT -> {
                 return true;
-            case PRINT_LOCATION:
-                printUserLocations();
-                break;
-            case MOVE:
+            }
+            case PRINT_LOCATION -> printUserLocations();
+            case MOVE -> {
                 moveUser();
                 checkAndCountActions();
-                break;
-            case PRINT_ACTIONS:
-                printActions();
-                break;
-            case PRINT_CITIES:
-                printCities();
-                break;
-            case PRINT_CONNECTIONS:
-                printConnections();
-                break;
-            case PRINT_ADJACENT_CITIES:
-                printAdjacentCities();
-                break;
-            case PRINT_DISEASES:
-                printInfectedCities();
-                break;
-            case REMOVE:
-                if (removeCube()) {                                 // Check removeCube.
+            }
+            case PRINT_ACTIONS -> printActions();
+            case PRINT_CITIES -> printCities();
+            case PRINT_CONNECTIONS -> printConnections();
+            case PRINT_ADJACENT_CITIES -> printAdjacentCities();
+            case PRINT_DISEASES -> printInfectedCities();
+            case REMOVE -> {
+                if (removeCube())                                     // Check removeCube.
                     checkAndCountActions();
-                }
-                break;
-            case PRINT_CARDS:
-                printAllCards();
-                break;
-            case GET_STATUS:
-                checkCityStatus(userLocation[currentUser]);
-                break;
-            case DIRECT_FLIGHT:
-                doDirectFlight();
-                break;
-            case CHARTER_FLIGHT:
-                doCharterFlight();
-                break;
-            case SHUTTLE_FLIGHT:
-                doShuttleFlight();
-                break;
-            case BUILD_RESEARCH:
-                buildResearchStation(userLocation[currentUser]);
-                break;
-            case PLAY_EVENT:
-                playEvent();
-        }
+            }
+            case PRINT_CARDS -> printAllCards();
+            case GET_STATUS -> checkCityStatus(userLocation[currentUser]);
+            case DIRECT_FLIGHT -> doDirectFlight();
+            case CHARTER_FLIGHT -> doCharterFlight();
+            case SHUTTLE_FLIGHT -> doShuttleFlight();
+            case BUILD_RESEARCH -> buildResearchStation(userLocation[currentUser]);
 
+            case PLAY_EVENT -> playEvent();
+        }
         return false;
     }
 
