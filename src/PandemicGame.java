@@ -958,18 +958,14 @@ public class PandemicGame {
         Scanner in = new Scanner(System.in);
         String userInput = in.nextLine();
         int cityNumber = 0;
-        String[] var3 = cities;
-        int var4 = var3.length;
 
-        for(int var5 = 0; var5 < var4; ++var5) {
-            String city = var3[var5];
+        for(int cityIterator = 0; cityIterator < cities.length; cityIterator++) {
+            String city = cities[cityIterator];
             if (userInput.equalsIgnoreCase(city)) {
                 return cityNumber;
             }
-
-            ++cityNumber;
+            cityNumber++;
         }
-
         return -1;
     }
 
