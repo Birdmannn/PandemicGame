@@ -1,7 +1,3 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -12,9 +8,10 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class PandemicGame {
+    // Declaration of all Global variables used in the game.
     private static Scanner shellInput;
     private static boolean shellOpen = false;
-    private static Random randomGenerator = new Random(1L);
+    private static Random randomGenerator = new Random(1);
     private static int numberCities = -1;
     private static int numberConnections = -1;
     private static String[] cities;
@@ -43,20 +40,22 @@ public class PandemicGame {
     private static final int SHUTTLE_FLIGHT = 13;
     private static final int BUILD_RESEARCH = 14;
     private static final int PLAY_EVENT = 15;
+
+    // Extra variables for the gameplay.
     private static int addAction = 0;
     private static int[] researchStation = new int[6];
     private static int[] diseaseCubeCities = new int[96];
     private static int[] remainingCubes = new int[4];
-    private static int researchCt = 0;
+    private static int researchCt = 0;                          // variable to keep track of total research stations.
     private static final int BLUE_CUBE = 0;
     private static final int YELLOW_CUBE = 1;
     private static final int RED_CUBE = 2;
     private static final int BLACK_CUBE = 3;
     private static final int MAX_HAND_SIZE = 7;
-    private static PandemicDeck playerDeck;
+    private static PandemicDeck playerDeck;                     // Player Deck of cards.
     private static PandemicDeck infectionDeck;
     private static PandemicHand[] userHand;
-    private static PandemicHand temp;
+    private static PandemicHand infectionDiscardPile;
     private static int outbreak;
     private static int foundCure;
     private static int infectionRate = 1;
@@ -71,68 +70,37 @@ public class PandemicGame {
     private static int yellowCt;
     private static int redCt;
     private static int blackCt;
-    private static boolean addMove = false;
+    private static boolean addMove = false;  // variable for the add move special card.
+    private static int addCount = 0;
 
-    public PandemicGame() {
-    }
-
+    /**
+     * Takes in a user input as a String and gives an integer equivalent output
+     * This method first converts the user's input to lower case and trims any extra
+     * white spaces after it.
+     * @param inputString
+     * @return
+     */
     private static int processUserInput(String inputString) {
-        byte var10000;
-        switch (inputString.toLowerCase().trim()) {
-            case "quit":
-                var10000 = 0;
-                break;
-            case "location":
-                var10000 = 1;
-                break;
-            case "cities":
-                var10000 = 4;
-                break;
-            case "connections":
-                var10000 = 5;
-                break;
-            case "adjacent":
-                var10000 = 6;
-                break;
-            case "infections":
-                var10000 = 7;
-                break;
-            case "move":
-                var10000 = 2;
-                break;
-            case "remove":
-                var10000 = 8;
-                break;
-            case "actions":
-            case "help":
-                var10000 = 3;
-                break;
-            case "print cards":
-                var10000 = 9;
-                break;
-            case "get status":
-                var10000 = 10;
-                break;
-            case "direct flight":
-                var10000 = 11;
-                break;
-            case "charter flight":
-                var10000 = 12;
-                break;
-            case "shuttle flight":
-                var10000 = 13;
-                break;
-            case "build research":
-                var10000 = 14;
-                break;
-            case "play event":
-                var10000 = 15;
-                break;
-            default:
-                var10000 = -1;
-        }
-
-        return var10000;
+        inputString = inputString.toLowerCase().trim();
+        return switch (inputString.toLowerCase().trim()) {
+            case "quit" -> QUIT;
+            case "location" -> PRINT_LOCATION;
+            case "cities" -> PRINT_CITIES;
+            case "connections" -> PRINT_CONNECTIONS;
+            case "adjacent" -> PRINT_ADJACENT_CITIES;
+            case "infections" -> PRINT_DISEASES;
+            case "move" -> MOVE;
+            case "remove" -> REMOVE;
+            case "actions", "help" -> PRINT_ACTIONS;
+            case "print cards" -> PRINT_CARDS;
+            case "get status" -> GET_STATUS;
+            case "direct flight" -> DIRECT_FLIGHT;
+            case "charter flight" -> CHARTER_FLIGHT;
+            case "shuttle flight" -> SHUTTLE_FLIGHT;
+            case "build research" -> BUILD_RESEARCH;
+            case "play event" -> PLAY_EVENT;
+            default -> -1;
+        };
     }
 
     private static int getUserInput() {
@@ -148,7 +116,8 @@ public class PandemicGame {
             processedUserInput = processUserInput(userInput);
             if (processedUserInput >= 0) {
                 gotReasonableInput = true;
-            } else {
+            }
+            else {
                 System.out.println(userInput + " is not a good command. Try 'actions'.");
             }
         }
@@ -198,54 +167,54 @@ public class PandemicGame {
 
     private static boolean processUserCommand(int userInput) {
         switch (userInput) {
-            case 0:
+            case QUIT:
                 return true;
-            case 1:
+            case PRINT_LOCATION:
                 printUserLocations();
                 break;
-            case 2:
+            case MOVE:
                 moveUser();
                 checkAndCountActions();
                 break;
-            case 3:
+            case PRINT_ACTIONS:
                 printActions();
                 break;
-            case 4:
+            case PRINT_CITIES:
                 printCities();
                 break;
-            case 5:
+            case PRINT_CONNECTIONS:
                 printConnections();
                 break;
-            case 6:
+            case PRINT_ADJACENT_CITIES:
                 printAdjacentCities();
                 break;
-            case 7:
+            case PRINT_DISEASES:
                 printInfectedCities();
                 break;
-            case 8:
-                if (removeCube()) {
+            case REMOVE:
+                if (removeCube()) {                                 // Check removeCube.
                     checkAndCountActions();
                 }
                 break;
-            case 9:
+            case PRINT_CARDS:
                 printAllCards();
                 break;
-            case 10:
+            case GET_STATUS:
                 checkCityStatus(userLocation[currentUser]);
                 break;
-            case 11:
+            case DIRECT_FLIGHT:
                 doDirectFlight();
                 break;
-            case 12:
+            case CHARTER_FLIGHT:
                 doCharterFlight();
                 break;
-            case 13:
+            case SHUTTLE_FLIGHT:
                 doShuttleFlight();
                 break;
-            case 14:
+            case BUILD_RESEARCH:
                 buildResearchStation(userLocation[currentUser]);
                 break;
-            case 15:
+            case PLAY_EVENT:
                 playEvent();
         }
 
@@ -276,48 +245,48 @@ public class PandemicGame {
 
     }
 
-    private static boolean removeCube() {
+    private static boolean removeCube() {                                               //Check this subroutine.
         int currentUserLocation = userLocation[currentUser];
         if (diseaseCubes[currentUserLocation] > 0) {
-            int var10002 = diseaseCubes[currentUserLocation]--;
-            int var10001 = diseaseCubes[currentUserLocation];
-            System.out.println("There are " + var10001 + " left");
+            diseaseCubes[currentUserLocation]--;
+            int cubesLeft = diseaseCubes[currentUserLocation];
+            System.out.println("There are " + cubesLeft + " left");
             return true;
-        } else {
+        }
+        else {
             System.out.println("The space you're on has no disease cubes.");
             return false;
         }
     }
 
     private static void checkAndCountActions() {
-        int maxCheck = addMove ? 4 : 3;
-        ++countCheck;
-        if (countCheck == maxCheck) {
-            System.out.println("You've reached your maximum number of actions.");
-            countCheck = 0;
-            actionDone();
-        } else {
-            System.out.println("Note: You can perform a maximum of four actions.");
-            System.out.println("Number of actions left: " + (maxCheck - countCheck));
-            if (addMove) {
-                System.out.println(usernames[currentUser] + " perform another action.");
-                addMove = false;
-            } else {
-                drawPlayerCard();
-                drawInfectionCard();
-                actionDone();
-            }
+        if (addMove) {
+            System.out.println(usernames[currentUser] + " perform another action.");
+            addMove = false;
+            addCount = 2;   // Add two extra moves to the user that played the 'add move' special card.
+            System.out.println("No. of moves left: " + addCount);
+            return;
         }
+        if(addCount > 0) {
+            addCount--;
+            System.out.println("No. of moves left: " + addCount);
+            System.out.println("Perform another action.");
+            return;
+        }
+        drawPlayerCard();
+        drawInfectionCard();
+        actionDone();
+
     }
 
     private static void actionDone() {
-        ++currentUser;
+        currentUser++;
         currentUser %= NUMBER_USERS;
         System.out.println("It's now " + usernames[currentUser] + "'s turn.");
     }
 
     private static void readCities(int numCities, Scanner in) {
-        for(int cityNumber = 0; cityNumber < numCities; ++cityNumber) {
+        for(int cityNumber = 0; cityNumber < numCities; cityNumber++) {
             String cityName = in.nextLine();
             cities[cityNumber] = cityName;
         }
@@ -382,21 +351,22 @@ public class PandemicGame {
 
     private static void readCityGraph() {
         try {
-            File fileHandle = new File("C:\\Users\\DELL\\fullMap.txt");
+            File fileHandle = new File(cityMapFileName);
             Scanner mapFileReader = new Scanner(fileHandle);
             numberCities = mapFileReader.nextInt();
-            String data = mapFileReader.nextLine();
+            mapFileReader.nextLine();
             cities = new String[numberCities];
             diseaseCubes = new int[numberCities];
             numberConnections = mapFileReader.nextInt();
-            data = mapFileReader.nextLine();
+            mapFileReader.nextLine();
             connections = new int[2][numberConnections];
             readCities(numberCities, mapFileReader);
             readConnections(numberConnections, mapFileReader);
             mapFileReader.close();
-        } catch (FileNotFoundException var3) {
+        }
+        catch (FileNotFoundException e) {
             System.out.println("An error occurred reading the city graph.");
-            var3.printStackTrace();
+            e.printStackTrace();
         }
 
     }
@@ -404,8 +374,8 @@ public class PandemicGame {
     private static void printInfectedCities() {
         for(int cityNumber = 0; cityNumber < numberCities; ++cityNumber) {
             if (diseaseCubes[cityNumber] > 0) {
-                String var10001 = cities[cityNumber];
-                System.out.println(var10001 + " has " + diseaseCubes[cityNumber] + " cubes.");
+                String city = cities[cityNumber];
+                System.out.println(city + " has " + diseaseCubes[cityNumber] + " cubes.");
             }
         }
 
@@ -423,7 +393,8 @@ public class PandemicGame {
                 try {
                     noOfUsers = Integer.parseInt(in.nextLine());
                     break;
-                } catch (NumberFormatException var5) {
+                }
+                catch (NumberFormatException var5) {
                     System.out.println("Please input a valid number.");
                 }
             }
@@ -434,8 +405,8 @@ public class PandemicGame {
                 usernames = new String[noOfUsers];
                 System.out.println("Type in your usernames. Press the 'Return' key to use default.");
 
-                label57:
-                while(i < usernames.length) {
+
+                mainLoop: while(i < usernames.length) {
                     System.out.print("User " + (i + 1) + ": ");
                     String username = in.nextLine();
                     if (username.trim().length() == 0) {
@@ -447,12 +418,11 @@ public class PandemicGame {
                         for(int j = 0; j < i; ++j) {
                             if (usernames[i].equalsIgnoreCase(usernames[j])) {
                                 System.out.println("Two users can not have the same username.");
-                                continue label57;
+                                continue mainLoop;
                             }
                         }
                     }
-
-                    ++i;
+                    i++;
                 }
 
                 System.out.print("Welcome ");
@@ -486,15 +456,17 @@ public class PandemicGame {
             getUsers();
             readCityGraph();
             initializeGame();
-        } catch (Exception var4) {
-            System.out.println(var4.getMessage());
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
         }
 
         while(!gameDone || !gameOver) {
             try {
                 int userInput = getUserInput();
                 gameDone = processUserCommand(userInput);
-            } catch (Exception var3) {
+            }
+            catch (Exception var3) {
                 System.out.println(var3.getMessage());
             }
         }
@@ -505,20 +477,18 @@ public class PandemicGame {
     private static void buildResearchStation(int cityNumber) {
         if (researchCt == 6) {
             throw new IllegalStateException("Maximum number of Research Stations reached.");
-        } else {
-            int[] var1 = researchStation;
-            int var2 = var1.length;
-
-            for(int var3 = 0; var3 < var2; ++var3) {
-                int i = var1[var3];
-                if (i == cityNumber) {
+        }
+        else {
+            for (int researchCity : researchStation) {
+                if (researchCity == cityNumber) {
                     System.out.println("You can't build a research station here because it already has one.");
                     return;
                 }
             }
-
+            // Here, the research station is ready to be built
             researchStation[researchCt] = cityNumber;
-            ++researchCt;
+            // Increment the number of research stations built so far
+            researchCt++;
         }
     }
 
@@ -535,62 +505,57 @@ public class PandemicGame {
     private static void initializeData() {
         Arrays.fill(diseaseCubeCities, -1);
         Arrays.fill(researchStation, -1);
-        researchStation[0] = 0;
+        researchStation[0] = 0;                 // There is one research station in Atlanta at the start of the game.
         Arrays.fill(remainingCubes, 24);
-        ++researchCt;
+        researchCt++;
     }
 
     private static void getResearchInfo(int cityNumber) {
         boolean research = false;
 
-        for(int i = 0; i < researchStation.length; ++i) {
-            if (researchStation[i] == cityNumber) {
+        for (int researchCity : researchStation) {
+            if (researchCity == cityNumber) {
                 research = true;
+                break;
             }
         }
 
-        String var10001;
-        if (research) {
-            var10001 = cities[cityNumber];
-            System.out.println("There is a research station in " + var10001);
-        } else {
-            var10001 = cities[cityNumber];
-            System.out.println("There is no research station in " + var10001);
-        }
-
+        if (research)
+            System.out.println("There is a research station in " + cities[cityNumber]);
+        else
+            System.out.println("There is no research station in " + cities[cityNumber]);
     }
 
     private static void printDiseaseInCity(int cityNumber) {
         countDiseaseCubes(cityNumber);
         int total = blueCt + yellowCt + redCt + blackCt;
-        String var10001 = cities[cityNumber];
-        System.out.print("The number of cubes in " + var10001 + ": ");
-        if (blueCt == 0 && yellowCt == 0 && redCt == 0 && blackCt == 0) {
+        String city = cities[cityNumber];
+        System.out.print("The number of cubes in " + city + ": ");
+        if (blueCt == 0 && yellowCt == 0 && redCt == 0 && blackCt == 0)
             System.out.print("0");
-        } else {
-            System.out.println("" + total + "\nBlue Disease: " + blueCt + ", Yellow Disease: " + yellowCt + ",  Red Disease: " + redCt + ", Black Disease: " + blackCt);
-        }
+        else
+            System.out.println("" + total + "\nBlue Disease: " + blueCt + ", Yellow Disease: "
+                    + yellowCt + ",  Red Disease: " + redCt + ", Black Disease: " + blackCt);
 
     }
 
     private static void countDiseaseCubes(int cityNumber) {
+        // Re-initialize all the values for counting the number of individual cubes.
         blueCt = 0;
         yellowCt = 0;
         redCt = 0;
         blackCt = 0;
 
         for(int i = 0; i < 96; ++i) {
-            if (i < 24 && diseaseCubeCities[i] == cityNumber) {
-                ++blueCt;
-            } else if (i < 48 && diseaseCubeCities[i] == cityNumber) {
-                ++yellowCt;
-            } else if (i < 72 && diseaseCubeCities[i] == cityNumber) {
-                ++redCt;
-            } else if (diseaseCubeCities[i] == cityNumber) {
-                ++blackCt;
-            }
+            if (i < 24 && diseaseCubeCities[i] == cityNumber)
+                blueCt++;
+            else if (i < 48 && diseaseCubeCities[i] == cityNumber)
+                yellowCt++;
+            else if (i < 72 && diseaseCubeCities[i] == cityNumber)
+                redCt++;
+            else if (diseaseCubeCities[i] == cityNumber)
+                blackCt++;
         }
-
     }
 
     private static void createInfection(int cityNumber, int noOfCubes, int cubeColor) {
@@ -598,49 +563,33 @@ public class PandemicGame {
             if (remainingCubes[cubeColor] == 0) {
                 String info = "Out of disease cubes of a particular color.";
                 gameEnded(false, info);
-            } else {
-                byte var10000;
-                switch (cubeColor) {
-                    case 0:
-                        var10000 = 24;
-                        break;
-                    case 1:
-                        var10000 = 48;
-                        break;
-                    case 2:
-                        var10000 = 72;
-                        break;
-                    default:
-                        var10000 = 96;
-                }
-
-                int cubeEnd = var10000;
+            }
+            else {
+                int cubeEnd = switch (cubeColor) {
+                    case BLUE_CUBE -> 24;
+                    case YELLOW_CUBE -> 48;
+                    case RED_CUBE -> 72;
+                    default -> 96;
+                };
 
                 for(int i = 0; i < noOfCubes; ++i) {
                     diseaseCubeCities[cubeEnd - remainingCubes[0]] = cityNumber;
-                    int var10002 = remainingCubes[cubeColor]--;
+                    remainingCubes[cubeColor]--;
                 }
-
             }
-        } else {
-            throw new IllegalArgumentException("Type in a number from 0 - 3");
         }
+        else
+            throw new IllegalArgumentException("Type in a number from 0 - 3");
     }
 
     private static boolean checkOutbreak(int cityNumber, int noOfCubes, int cubeEnd) {
         int count = 0;
 
-        for(int i = cubeEnd - 24; i < cubeEnd; ++i) {
-            if (diseaseCubeCities[i] == cityNumber) {
-                ++count;
-            }
-        }
+        for(int i = cubeEnd - 24; i < cubeEnd; ++i)
+            if (diseaseCubeCities[i] == cityNumber)
+                count++;
 
-        if (count + noOfCubes > 3) {
-            return true;
-        } else {
-            return false;
-        }
+        return (count + noOfCubes > 3);
     }
 
     private static void infectCities() {
@@ -649,42 +598,38 @@ public class PandemicGame {
         infectionDeck.shuffle();
         userHand = new PandemicHand[NUMBER_USERS];
 
-        int cubeValue;
-        for(cubeValue = 0; cubeValue < NUMBER_USERS; ++cubeValue) {
-            userHand[cubeValue] = new PandemicHand();
-        }
 
-        temp = new PandemicHand();
+        for(int userNumber = 0; userNumber < NUMBER_USERS; userNumber++)
+            userHand[userNumber] = new PandemicHand();
 
-        for(cubeValue = 0; cubeValue < 9; ++cubeValue) {
-            temp.addCard(infectionDeck.dealCard());
-        }
+        infectionDiscardPile = new PandemicHand();
 
-        cubeValue = 0;
+        // Deal Nine cards from the infection deck. This is one of the things that are done
+        // at the start of the game.
+        for(int cardCount = 0; cardCount < 9; cardCount++)
+            infectionDiscardPile.addCard(infectionDeck.dealCard());
 
-        int i;
-        for(i = 0; i < 6; ++i) {
-            int i1 = cubeValue < 3 ? 2 : 3;
-            int value = temp.getCard(i).getValue();
-            int color = temp.getCard(i).getAttribute();
-            createInfection(value, i1, color);
+        for(int cardCount = 0; cardCount < 6; cardCount++) {
+            int cubeValue = cardCount < 3 ? 2 : 3;
+            int value = infectionDiscardPile.getCard(cardCount).getValue();
+            int color = infectionDiscardPile.getCard(cardCount).getAttribute();
+            createInfection(value, cubeValue, color);
             ++cubeValue;
         }
 
-        for(i = 6; i < 9; ++i) {
-            createInfection(temp.getCard(i).getValue(), 1, temp.getCard(i).getAttribute());
+        for(int cardCount = 6; cardCount < 9; cardCount++) {
+            createInfection(infectionDiscardPile.getCard(cardCount).getValue(), 1,
+                    infectionDiscardPile.getCard(cardCount).getAttribute());
         }
 
     }
 
     private static void gameEnded(boolean won, String info) {
         System.out.print("Game over. ");
-        if (won) {
+        if (won)
             System.out.println("Game won!");
-        } else {
+        else
             System.out.println("Game lost.");
-        }
-
         System.out.println(info);
         gameOver = true;
     }
@@ -698,38 +643,38 @@ public class PandemicGame {
         if (playerDeck.isEmpty()) {
             String info = "Can't draw cards -- Deck is empty.";
             gameEnded(false, info);
-        } else {
-            if (userHand[currentUser].getCardCount() == 7) {
-                System.out.println("You've reached the number of cards limit in hand.\nYou'll have to discard a card. Starting card number 1.");
+        }
+        else {
+            if (userHand[currentUser].getCardCount() == MAX_HAND_SIZE) {
+                System.out.println("You've reached the number of cards limit in hand.\nYou'll have to discard a card." +
+                        " Starting card number 1.");
                 printAllCards();
                 Scanner in = new Scanner(System.in);
 
-                label39:
-                while(true) {
+                mainLoop: while(true) {
                     while(true) {
                         try {
                             System.out.print("? ");
                             int cardNumber = in.nextInt();
                             if (cardNumber >= 1 && cardNumber <= userHand[currentUser].getCardCount()) {
                                 removeCard(cardNumber - 1);
-                                break label39;
+                                break mainLoop;
                             }
-
                             System.out.println("Please input a value between 1 and " + userHand[currentUser].getCardCount());
-                        } catch (Exception var2) {
-                            System.out.println("Illegal input found. Please input a valid nu");
+                        }
+                        catch (Exception e) {
+                            System.out.println("Illegal input found. Please input a valid card number from 1 to "
+                                    + userHand[currentUser].getCardCount());
                         }
                     }
                 }
             }
 
-            PandemicCard c = playerDeck.dealCard();
-            if (c.getValue() >= 52 && c.getValue() <= 55) {
-                drawEpidemicCard(c);
-            } else {
-                userHand[currentUser].addCard(c);
-            }
-
+            PandemicCard card = playerDeck.dealCard();
+            if (card.getValue() >= 52 && card.getValue() <= 55)
+                drawEpidemicCard(card);
+            else
+                userHand[currentUser].addCard(card);
         }
     }
 
@@ -738,27 +683,21 @@ public class PandemicGame {
     }
 
     private static void printAllCards() {
-        Iterator var0 = userHand[currentUser].getCardArray().iterator();
-
-        while(var0.hasNext()) {
-            PandemicCard card = (PandemicCard)var0.next();
-            if (card.getValue() < 48) {
-                PrintStream var10000 = System.out;
-                String var10001 = cities[card.getValue()];
-                var10000.println("    " + var10001 + " " + card.getAttributeAsString());
-            } else {
-                switch (card.getValue()) {
-                    case 48:
-                        System.out.println("    " + card.getAttributeAsString() + ": Fly Anywhere.");
-                        break;
-                    case 49:
-                        System.out.println("    " + card.getAttributeAsString() + ": Build Research station anywhere.");
-                        break;
-                    case 50:
-                        System.out.println("    " + card.getAttributeAsString() + ": Solve Disease.");
-                        break;
-                    default:
-                        System.out.println("    " + card.getAttributeAsString() + ": Add one move to number of moves.");
+        for (PandemicCard card : userHand[currentUser].getCardArray()) {
+            int cardValue = card.getValue();
+            if (card.getAttribute() != PandemicCard.EVENT_CARD) {
+                System.out.println("    " + cities[cardValue] + " " + card.getAttributeAsString());
+            }
+            else {
+                switch (cardValue) {
+                    case PandemicCard.FLY_ANYWHERE ->
+                            System.out.println("    " + card.getAttributeAsString() + ": Fly Anywhere.");
+                    case PandemicCard.BUILD_R_ANYWHERE ->
+                            System.out.println("    " + card.getAttributeAsString() + ": Build Research station anywhere.");
+                    case PandemicCard.SOLVE_DISEASE ->
+                            System.out.println("    " + card.getAttributeAsString() + ": Solve Disease.");
+                    default ->
+                            System.out.println("    " + card.getAttributeAsString() + ": Add one move to number of moves.");
                 }
             }
         }
@@ -777,52 +716,48 @@ public class PandemicGame {
                 if (cardPosition >= 1 && cardPosition <= userHand[currentUser].getCardCount()) {
                     break;
                 }
-
                 System.out.println("Please input a valid number from 1 to " + userHand[currentUser].getCardCount());
-            } catch (Exception var4) {
+            }
+            catch (Exception e) {
                 System.out.print("Illegal input. Please put a valid input.\n? ");
             }
         }
 
-        PandemicCard c = userHand[currentUser].getCard(cardPosition - 1);
-        if (c.getAttribute() != 4) {
+        PandemicCard card = userHand[currentUser].getCard(cardPosition - 1);
+        if (card.getAttribute() != PandemicCard.EVENT_CARD) {
             System.out.println("Card is not an event card.");
-        } else {
+        }
+        else {
             int cityNumber = -1;
-            switch (c.getValue()) {
-                case 48:
-                    while(cityNumber < 0) {
+            switch (card.getValue()) {
+                case PandemicCard.FLY_ANYWHERE -> {
+                    while (cityNumber < 0) {
                         cityNumber = doFlyAnywhere();
                         if (cityNumber < 0) {
                             System.out.println("Type in a valid city number.");
                         }
                     }
-
                     userLocation[currentUser] = cityNumber;
-                    break;
-                case 49:
+                }
+                case PandemicCard.BUILD_R_ANYWHERE -> {
                     if (researchCt == 6) {
                         System.out.println("Research station has reached its limit. Card automatically discarded.");
                         return;
                     }
-
-                    while(cityNumber < 0) {
+                    while (cityNumber < 0) {
                         cityNumber = doBuildResearch();
                         if (cityNumber < 0) {
                             System.out.println("Type in a valid city number.");
                         }
                     }
-
                     buildResearchStation(cityNumber);
-                    break;
-                case 50:
+                }
+                case PandemicCard.SOLVE_DISEASE -> {
                     freeCure = true;
                     doSolveDisease(in);
-                    break;
-                default:
-                    addMove = true;
+                }
+                default -> addMove = true;
             }
-
             checkAndCountActions();
         }
     }
@@ -830,75 +765,53 @@ public class PandemicGame {
     private static void dealInitialCards() {
         PandemicHand hand = new PandemicHand();
 
-        for(int i = 0; i < 4; ++i) {
+        for(int i = 0; i < 4; ++i)
             hand.addCard(playerDeck.removeBottom());
-        }
 
         playerDeck.shuffle();
-        byte var10000;
-        switch (NUMBER_USERS) {
-            case 1:
-                var10000 = 4;
-                break;
-            case 2:
-                var10000 = 4;
-                break;
-            case 3:
-                var10000 = 3;
-                break;
-            default:
-                var10000 = 2;
-        }
+        // Number of cards to be dealt based on the number of users.
+        int noOfCards = switch (NUMBER_USERS) {
+            case 1, 2 -> 4;
+            case 3 -> 3;
+            default -> 2;
+        };
 
-        int N = var10000;
-
-        for(int i = 0; i < NUMBER_USERS; ++i) {
-            for(int cardCt = 0; cardCt < N; ++cardCt) {
-                userHand[i].addCard(playerDeck.dealCard());
+        for(int userNumber = 0; userNumber < NUMBER_USERS; userNumber++) {
+            for(int cardCt = 0; cardCt < noOfCards; cardCt++) {
+                userHand[userNumber].addCard(playerDeck.dealCard());
             }
         }
-
         createEpidemicDeck(hand);
     }
 
-    private static void drawEpidemicCard(PandemicCard c) {
+    private static void drawEpidemicCard(PandemicCard card) {
         PandemicHand hand = new PandemicHand();
-        hand.addCard(c);
+        hand.addCard(card);
         PandemicCard infectionCard = infectionDeck.removeBottom();
         System.out.println("Epidemic card drawn.");
         PrintStream var10000 = System.out;
         String var10001 = cities[infectionCard.getValue()];
         var10000.println("Infection card drawn from deck bottom. Card: " + var10001 + " " + infectionCard.getAttributeAsString());
         doEpidemics(infectionCard.getValue(), 3, infectionCard.getAttribute());
-        temp.addCard(infectionCard);
-        temp.shuffle();
-        Iterator var3 = temp.getCardArray().iterator();
+        infectionDiscardPile.addCard(infectionCard);
+        infectionDiscardPile.shuffle();
 
-        while(var3.hasNext()) {
-            PandemicCard card = (PandemicCard)var3.next();
-            infectionDeck.addToDeck(card);
+        for (PandemicCard cardToStack : infectionDiscardPile.getCardArray()) {
+            infectionDeck.addToDeck(cardToStack);
         }
 
-        temp.clear();
-        ++infectionRate;
+        infectionDiscardPile.clear();
+        infectionRate++;
     }
 
     private static void doEpidemics(int cityNumber, int noOfCubes, int cubeColor) {
         if ((cubeColor != 0 || !blueCure) && (cubeColor != 1 || !yellowCure) && (cubeColor != 2 || !redCure) && (cubeColor != 3 || !blackCure)) {
-            byte var10000;
-            switch (cubeColor) {
-                case 0:
-                    var10000 = 24;
-                    break;
-                case 1:
-                    var10000 = 48;
-                    break;
-                case 2:
-                    var10000 = 72;
-                    break;
-                default:
-                    var10000 = 96;
-            }
+            byte var10000 = switch (cubeColor) {
+                case 0 -> 24;
+                case 1 -> 48;
+                case 2 -> 72;
+                default -> 96;
+            };
 
             int cubeEnd = var10000;
             if (checkOutbreak(cityNumber, noOfCubes, cubeEnd)) {
@@ -917,7 +830,7 @@ public class PandemicGame {
         for(int cardCt = 0; cardCt < infectionRate; ++cardCt) {
             PandemicCard c = infectionDeck.removeBottom();
             doEpidemics(c.getValue(), 1, c.getAttribute());
-            temp.addCard(c);
+            infectionDiscardPile.addCard(c);
         }
 
     }
