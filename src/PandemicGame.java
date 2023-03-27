@@ -780,50 +780,52 @@ public class PandemicGame {
     }
 
     private static void doEpidemics(int cityNumber, int noOfCubes, int cubeColor) {
-        if ((cubeColor != 0 || !blueCure) && (cubeColor != 1 || !yellowCure) && (cubeColor != 2 || !redCure) && (cubeColor != 3 || !blackCure)) {
-            byte var10000 = switch (cubeColor) {
+        if ((cubeColor != 0 || !blueCure) && (cubeColor != 1 || !yellowCure) && (cubeColor != 2 || !redCure)
+                && (cubeColor != 3 || !blackCure)) {
+
+            // For setting the end array for a particular cube.
+            int cubeEnd = switch (cubeColor) {
                 case 0 -> 24;
                 case 1 -> 48;
                 case 2 -> 72;
                 default -> 96;
             };
 
-            int cubeEnd = var10000;
             if (checkOutbreak(cityNumber, noOfCubes, cubeEnd)) {
                 doOutbreak(cityNumber, cubeColor);
-            } else {
+            }
+            else {
                 createInfection(cityNumber, noOfCubes, cubeEnd);
             }
 
-        } else {
-            String var10001 = color[cubeColor];
-            System.out.println(var10001 + " has already been cured");
+        }
+        else {
+            System.out.println(color[cubeColor] + " has already been cured");
         }
     }
 
     private static void drawInfectionCard() {
         for(int cardCt = 0; cardCt < infectionRate; ++cardCt) {
-            PandemicCard c = infectionDeck.removeBottom();
-            doEpidemics(c.getValue(), 1, c.getAttribute());
-            infectionDiscardPile.addCard(c);
+            PandemicCard card = infectionDeck.removeBottom();
+            doEpidemics(card.getValue(), 1, card.getAttribute());
+            infectionDiscardPile.addCard(card);
         }
-
     }
 
     private static void doOutbreak(int outbreakCityNumber, int cubeColor) {
-        ++outbreak;
-        String var10001 = cities[outbreakCityNumber];
-        System.out.println("An outbreak has just occurred in " + var10001);
+        outbreak++;
+        String city = cities[outbreakCityNumber];
         if (outbreak == 8) {
-            String var10000 = cities[outbreakCityNumber];
-            String info = "An eighth outbreak has occurred in " + var10000;
+            String info = "An eighth outbreak has occurred in " + city;
             gameEnded(false, info);
         }
+        System.out.println("An outbreak has just occurred in " + city);
+
 
         for(int cityNumber = 0; cityNumber < numberCities; ++cityNumber) {
             if (citiesAdjacent(outbreakCityNumber, cityNumber)) {
                 doEpidemics(cityNumber, 1, cubeColor);
-                int var10002 = diseaseCubes[cubeColor]--;
+                diseaseCubes[cubeColor]--;
             }
         }
 
@@ -858,11 +860,11 @@ public class PandemicGame {
                     if (cardNumber < 1 || cardNumber > userHand[currentUser].getCardCount()) {
                         System.out.print("Please type a valid card Number: ");
                     }
-                } while(cardNumber < 1);
-            } while(cardNumber > userHand[currentUser].getCardCount());
+                } while (cardNumber < 1);
+            } while (cardNumber > userHand[currentUser].getCardCount());
 
             PandemicCard card = userHand[currentUser].getCard(cardNumber);
-            if (card.getAttribute() == 4) {
+            if (card.getAttribute() == PandemicCard.EVENT_CARD) {
                 System.out.println("Card is an event card. You need a city card to perform Charter Flight. Perform another action.");
                 userHand[currentUser].addCard(cardNumber, card);
                 return;
@@ -873,8 +875,9 @@ public class PandemicGame {
                 userHand[currentUser].addCard(cardNumber, card);
                 return;
             }
-        } catch (Exception var4) {
-            System.out.println(var4.getMessage());
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
             System.out.println("Please perform another action.");
             return;
         }
@@ -888,24 +891,32 @@ public class PandemicGame {
             int cityAsValue = searchForCity();
             if (cityAsValue > -1) {
                 userLocation[currentUser] = cityAsValue;
-                String var10001 = usernames[currentUser];
-                System.out.println(var10001 + " is now in " + cities[userLocation[currentUser]] + ".");
+                System.out.println(usernames[currentUser] + " is now in " + cities[userLocation[currentUser]] + ".");
                 checkAndCountActions();
                 return;
             }
 
             System.out.println("Please input a valid city.");
         }
+
     }
 
-    private static void doShuttleFlight() {
+    private static void processActionCard(boolean doCharterFlight) {
+
+    }
+
+    /**
+     * Move between research stations
+     */
+    private static void doShuttleFlight() {                                                                         // This method is incomplete
         printResearchCities();
         System.out.println("Which research station do you wish to fly to: ");
         int station = searchForCity();
         if (station == -1) {
-            System.out.println("Research station city does not exist. ");
-        } else {
-            for(int city = 0; city < researchStation.length; ++city) {
+            System.out.println("Research station city does not exist.");
+        }
+        else {
+            for(int city = 0; city < researchStation.length; city++) {
                 if (researchStation[city] == station) {
                     userLocation[currentUser] = station;
                     System.out.println("Shuttle flight to " + cities[userLocation[currentUser]] + " successful.");
@@ -913,9 +924,7 @@ public class PandemicGame {
                     return;
                 }
             }
-
-            String var10001 = cities[station];
-            System.out.println(var10001 + " is not a city with a research station.");
+            System.out.println(cities[station] + " is not a city with a research station.");
         }
     }
 
@@ -930,7 +939,6 @@ public class PandemicGame {
                 System.out.println(cities[station]);
             }
         }
-
     }
 
     private static void doTreatDisease(Scanner in) {
@@ -966,9 +974,23 @@ public class PandemicGame {
     }
 
     private static void doSolveDisease(Scanner in) {
+        boolean rightLocation = false;          // variable for checking if the user is in the right location
+        // Check if the user is in a research station. Diseases can only be solved in research stations
+        for (int station : researchStation) {
+            if (userLocation[currentUser] == station) {
+                rightLocation = true;
+                break;
+            }
+        }
+        if(!rightLocation) {
+            // User is in the wrong location and needs to get to the right location
+            System.out.println("You're in " + cities[userLocation[currentUser]] + ", Which is not a research" +
+                    " station.");
+            return;
+        }
         if (!freeCure) {
             PandemicHand cardArray = new PandemicHand();
-            System.out.println("Type in all four card locations.");
+            System.out.println("Type in all five card locations.");
             int userInput = 0;
 
             for(int cardCount = 0; cardCount < 5; ++cardCount) {
@@ -976,56 +998,58 @@ public class PandemicGame {
                     try {
                         System.out.print("? ");
                         userInput = in.nextInt();
+                        if(userInput < 1 || userInput > userHand[currentUser].getCardCount())
+                            System.out.println("Illegal card number. Please enter a value between 1 and " +
+                                     userHand[currentUser].getCardCount());
                         cardArray.addCard(userHand[currentUser].getCard(userInput - 1));
                     }
                     catch (Exception e) {
                         System.out.println(e.getMessage());
                     }
-                } while(userInput < 1 || userInput > userHand[currentUser].getCardCount());
+                } while (userInput < 1 || userInput > userHand[currentUser].getCardCount());
             }
-        } else {
+
+            // Here compare all five cards drawn into the temporary card Array
+            // Discard all five cards
+        }
+        else {
             System.out.println("Type in the color of disease you want to solve: ");
             switch (in.nextLine().toLowerCase()) {
-                case "red":
+                case "red" -> {
                     if (redCure) {
                         System.out.println("Red disease has already been cured.");
                         return;
                     }
-
                     redCure = true;
-                    break;
-                case "blue":
+                }
+                case "blue" -> {
                     if (blueCure) {
                         System.out.println("Blue disease has already been cured.");
                         return;
                     }
-
                     blueCure = true;
-                    break;
-                case "yellow":
+                }
+                case "yellow" -> {
                     if (yellowCure) {
                         System.out.println("Yellow disease has already been cured.");
                         return;
                     }
-
                     yellowCure = true;
-                    break;
-                case "black":
+                }
+                case "black" -> {
                     if (blackCure) {
                         System.out.println("Black disease has already been cured.");
                         return;
                     }
-
                     blackCure = true;
+                }
             }
-
             freeCure = false;
         }
+        foundCure++;
 
-        ++foundCure;
-        if (foundCure == 4) {
+        if (foundCure == 4)
             gameEnded(true, "Cure of all four diseases have been found.");
-        }
 
     }
 }
