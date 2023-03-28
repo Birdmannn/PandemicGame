@@ -1,9 +1,7 @@
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -199,39 +197,25 @@ public class PandemicGame {
     private static void moveUser() {
         boolean moved = false;
 
+        System.out.println("type where you'd like to move.");
+        System.out.println("You can move to ");
         while(!moved) {
-            System.out.println("type where you'd like to move.");
-            System.out.println("You can move to ");
             printAdjacentCities();
             String userInput = shellInput.nextLine();
             int cityToMoveTo = getCityOffset(userInput);
             if (cityToMoveTo == -1) {
                 System.out.println(userInput + " is not a valid city. Try one of these.");
-            } else if (citiesAdjacent(userLocation[currentUser], cityToMoveTo)) {
-                String var10001 = usernames[currentUser];
-                System.out.println(var10001 + " has moved from " + cities[userLocation[currentUser]] + " to " + cities[cityToMoveTo] + ".");
+            }
+            else if (citiesAdjacent(userLocation[currentUser], cityToMoveTo)) {
+                System.out.println(usernames[currentUser] + " has moved from " + cities[userLocation[currentUser]] + " to " + cities[cityToMoveTo] + ".");
                 userLocation[currentUser] = cityToMoveTo;
                 moved = true;
-            } else {
+            }
+            else {
                 System.out.println("You can't move to " + userInput + ". Try one of these.");
-                printAdjacentCities();
             }
         }
 
-    }
-
-    private static boolean removeCube() {                                               //Check this subroutine.
-        int currentUserLocation = userLocation[currentUser];
-        if (diseaseCubes[currentUserLocation] > 0) {
-            diseaseCubes[currentUserLocation]--;
-            int cubesLeft = diseaseCubes[currentUserLocation];
-            System.out.println("There are " + cubesLeft + " left");
-            return true;
-        }
-        else {
-            System.out.println("The space you're on has no disease cubes.");
-            return false;
-        }
     }
 
     private static void checkAndCountActions() {
@@ -357,7 +341,7 @@ public class PandemicGame {
     }
 
     public static void getUsers() {
-        int i = 0;
+        int position = 0;
         Scanner in = new Scanner(System.in);
         System.out.println("This game allows a maximum of 4 users.");
         System.out.print("Enter the number of users: ");
@@ -369,56 +353,51 @@ public class PandemicGame {
                     noOfUsers = Integer.parseInt(in.nextLine());
                     break;
                 }
-                catch (NumberFormatException var5) {
+                catch (NumberFormatException e) {
                     System.out.println("Please input a valid number.");
                 }
             }
 
-            if (noOfUsers >= 1 && noOfUsers <= 4) {
+            if (noOfUsers >= 1 && noOfUsers <= MAX_USERS) {
                 NUMBER_USERS = noOfUsers;
                 userLocation = new int[NUMBER_USERS];
                 usernames = new String[noOfUsers];
                 System.out.println("Type in your usernames. Press the 'Return' key to use default.");
 
 
-                mainLoop: while(i < usernames.length) {
-                    System.out.print("User " + (i + 1) + ": ");
+                mainLoop: while (position < usernames.length) {
+                    System.out.print("User " + (position + 1) + ": ");
                     String username = in.nextLine();
                     if (username.trim().length() == 0) {
-                        username = "User" + (i + 1);
+                        username = "User" + (position + 1);
                     }
 
-                    usernames[i] = username;
-                    if (i > 0) {
-                        for(int j = 0; j < i; ++j) {
-                            if (usernames[i].equalsIgnoreCase(usernames[j])) {
+                    usernames[position] = username;
+                    if (position > 0) {
+                        for(int iterator = 0; iterator < position; iterator++) {
+                            if (usernames[position].equalsIgnoreCase(usernames[iterator])) {
                                 System.out.println("Two users can not have the same username.");
                                 continue mainLoop;
                             }
                         }
                     }
-                    i++;
+                    position++;
                 }
 
                 System.out.print("Welcome ");
                 if (usernames.length > 1) {
-                    for(int j = 0; j < usernames.length; ++j) {
-                        String var10001;
-                        if (j == usernames.length - 1) {
-                            var10001 = usernames[j];
-                            System.out.print("and " + var10001 + " to the game.");
-                        } else {
-                            var10001 = usernames[j];
-                            System.out.print(var10001 + ", ");
-                        }
+                    for(int iterator = 0; iterator < usernames.length; ++iterator) {
+                        if (iterator == usernames.length - 1)
+                            System.out.print("and " + usernames[iterator] + " to the game.");
+                        else
+                            System.out.print(usernames[iterator] + ", ");
                     }
-                } else {
+                }
+                else {
                     System.out.println(usernames[0] + " to the game.");
                 }
-
                 return;
             }
-
             System.out.println("Please input a valid number from 1 - 4.");
         }
     }
@@ -441,12 +420,12 @@ public class PandemicGame {
                 int userInput = getUserInput();
                 gameDone = processUserCommand(userInput);
             }
-            catch (Exception var3) {
-                System.out.println(var3.getMessage());
+            catch (Exception e) {
+                System.out.println(e.getMessage());
             }
         }
 
-        System.out.println("Goodbye Pandemic Tester");
+        System.out.println("Goodbye Pandemic Players.");
     }
 
     private static void buildResearchStation(int cityNumber) {
@@ -764,10 +743,10 @@ public class PandemicGame {
         hand.addCard(card);
         PandemicCard infectionCard = infectionDeck.removeBottom();
         System.out.println("Epidemic card drawn.");
-        PrintStream var10000 = System.out;
-        String var10001 = cities[infectionCard.getValue()];
-        var10000.println("Infection card drawn from deck bottom. Card: " + var10001 + " " + infectionCard.getAttributeAsString());
-        doEpidemics(infectionCard.getValue(), 3, infectionCard.getAttribute());
+        int value = infectionCard.getValue();
+        String city = cities[value];
+        System.out.println("Infection card drawn from deck bottom. Card: " + city + " " + infectionCard.getAttributeAsString());
+        doEpidemics(value, 3, infectionCard.getAttribute());
         infectionDiscardPile.addCard(infectionCard);
         infectionDiscardPile.shuffle();
 
@@ -944,6 +923,20 @@ public class PandemicGame {
     private static void doTreatDisease(Scanner in) {
     }
 
+    private static boolean removeCube() {                                               //Check this subroutine.
+        int currentUserLocation = userLocation[currentUser];
+        if (diseaseCubes[currentUserLocation] > 0) {
+            diseaseCubes[currentUserLocation]--;
+            int cubesLeft = diseaseCubes[currentUserLocation];
+            System.out.println("There are " + cubesLeft + " left");
+            return true;
+        }
+        else {
+            System.out.println("The space you're on has no disease cubes.");
+            return false;
+        }
+    }
+
     private static int doFlyAnywhere() {
         System.out.print("Type in the city you wish to fly to: ");
         return searchForCity();
@@ -959,8 +952,7 @@ public class PandemicGame {
         String userInput = in.nextLine();
         int cityNumber = 0;
 
-        for(int cityIterator = 0; cityIterator < cities.length; cityIterator++) {
-            String city = cities[cityIterator];
+        for (String city : cities) {
             if (userInput.equalsIgnoreCase(city)) {
                 return cityNumber;
             }
@@ -985,67 +977,123 @@ public class PandemicGame {
             return;
         }
         if (!freeCure) {
-            PandemicHand cardArray = new PandemicHand();
-            System.out.println("Type in all five card locations.");
-            int userInput = 0;
-
-            for(int cardCount = 0; cardCount < 5; ++cardCount) {
-                do {
-                    try {
-                        System.out.print("? ");
-                        userInput = in.nextInt();
-                        if(userInput < 1 || userInput > userHand[currentUser].getCardCount())
-                            System.out.println("Illegal card number. Please enter a value between 1 and " +
-                                     userHand[currentUser].getCardCount());
-                        cardArray.addCard(userHand[currentUser].getCard(userInput - 1));
-                    }
-                    catch (Exception e) {
-                        System.out.println(e.getMessage());
-                    }
-                } while (userInput < 1 || userInput > userHand[currentUser].getCardCount());
-            }
-
-            // Here compare all five cards drawn into the temporary card Array
-            // Discard all five cards
+           validateCardsAndCheckCure(in);
         }
         else {
             System.out.println("Type in the color of disease you want to solve: ");
-            switch (in.nextLine().toLowerCase()) {
-                case "red" -> {
-                    if (redCure) {
-                        System.out.println("Red disease has already been cured.");
-                        return;
-                    }
-                    redCure = true;
-                }
-                case "blue" -> {
-                    if (blueCure) {
-                        System.out.println("Blue disease has already been cured.");
-                        return;
-                    }
-                    blueCure = true;
-                }
-                case "yellow" -> {
-                    if (yellowCure) {
-                        System.out.println("Yellow disease has already been cured.");
-                        return;
-                    }
-                    yellowCure = true;
-                }
-                case "black" -> {
-                    if (blackCure) {
-                        System.out.println("Black disease has already been cured.");
-                        return;
-                    }
-                    blackCure = true;
-                }
-            }
+            checkCure(in.nextLine());
             freeCure = false;
         }
-        foundCure++;
 
         if (foundCure == 4)
             gameEnded(true, "Cure of all four diseases have been found.");
+    }
 
+    /**
+     * This subroutine ensures that the five cards picked by the user to turn in are valid.
+     * This a robust subroutine. Please read the inside comments.
+     * @param in
+     */
+    private static void validateCardsAndCheckCure(Scanner in) {
+        PandemicHand cardArray = new PandemicHand();
+        System.out.println("Type in all five card locations.");
+        int userInput = 0;
+        int[] cardPositions = new int[5];   // For storing the five user input
+
+        for(int cardCount = 0; cardCount < 5; ++cardCount) {
+            do {
+                try {
+                    System.out.print("? ");
+                    userInput = in.nextInt();
+                    cardPositions[cardCount] = userInput;
+                    //Tests if the user's input was in the correct range of the number of cards in hand.
+                    if(userInput < 1 || userInput > userHand[currentUser].getCardCount())
+                        System.out.println("Illegal card number. Please enter a value between 1 and " +
+                                userHand[currentUser].getCardCount());
+                    cardArray.addCard(userHand[currentUser].getCard(userInput - 1));
+                }
+                catch (Exception e) {
+                    System.out.println(e.getMessage());
+                }
+            } while (userInput < 1 || userInput > userHand[currentUser].getCardCount());
+        }
+
+        // Here compare all five cards drawn into the temporary card Array
+        // Discard all five cards
+        // First check if their attributes match before discarding from the player
+        for (int cardPosition = 0; cardPosition < cardArray.getCardCount(); cardPosition++) {
+            // Check if card is an event card
+            if (cardArray.getCard(cardPosition).getAttribute() == PandemicCard.EVENT_CARD) {
+                System.out.println("Event card found in selected number of cards. Only city cards can be used.");
+                System.out.println("Perform another action.");
+                return;
+            }
+            if (cardPosition > 0) {
+                if (cardArray.getCard(cardPosition).getAttribute()
+                        != cardArray.getCard(cardPosition - 1).getAttribute()) {
+                    System.out.println("Found a card of different color. Please you need five cards of the same color.");
+                    System.out.println("Perform another action.");
+                    return;
+                }
+                //The robustness is here. Checks if the user's cards are made the same numerical input twice.
+                for(int iterator = 0; iterator < cardPosition; iterator++) {
+                    if (cardPositions[cardPosition] == cardPositions[iterator]) {
+                        System.out.println("You typed in a card location twice. Perform another action.");
+                        return;
+                    }
+                }
+            }
+        }
+        // Here all cards are confirmed to be the same.
+        PandemicCard card = cardArray.getCard(0);
+        if (! checkCure(card.getAttributeAsString())) {
+            // Cure has already been found, User still retains the cards
+            System.out.println("Perform another action.");
+        }
+        else {
+            // Discard the users cards
+            for (int position : cardPositions) {
+                removeCard(position);
+            }
+        }
+    }
+
+    private static boolean checkCure(String color) {
+        switch (color.toLowerCase()) {
+            case "red" -> {
+                if (redCure) {
+                    System.out.println("Red disease has already been cured.");
+                    return false;
+                }
+                redCure = true;
+            }
+            case "blue" -> {
+                if (blueCure) {
+                    System.out.println("Blue disease has already been cured.");
+                    return false;
+                }
+                blueCure = true;
+            }
+            case "yellow" -> {
+                if (yellowCure) {
+                    System.out.println("Yellow disease has already been cured.");
+                    return false;
+                }
+                yellowCure = true;
+            }
+            case "black" -> {
+                if (blackCure) {
+                    System.out.println("Black disease has already been cured.");
+                    return false;
+                }
+                blackCure = true;
+            }
+            default -> {
+                System.out.println("Please type in a valid color: Blue, yellow, red or black.");
+            }
+        }
+        System.out.println("Disease successfully solved.");
+        foundCure++;
+        return true;
     }
 }
