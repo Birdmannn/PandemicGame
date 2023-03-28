@@ -184,10 +184,10 @@ public class PandemicGame {
             }
             case PRINT_CARDS -> printAllCards();
             case GET_STATUS -> checkCityStatus(userLocation[currentUser]);
-            case DIRECT_FLIGHT -> doDirectFlight();
-            case CHARTER_FLIGHT -> doCharterFlight();
+            case DIRECT_FLIGHT -> processActionCard(false);
+            case CHARTER_FLIGHT -> processActionCard(true);
             case SHUTTLE_FLIGHT -> doShuttleFlight();
-            case BUILD_RESEARCH -> buildResearchStation(userLocation[currentUser]);
+            case BUILD_RESEARCH -> buildResearchStation(userLocation[currentUser], false);
 
             case PLAY_EVENT -> playEvent();
         }
@@ -428,19 +428,53 @@ public class PandemicGame {
         System.out.println("Goodbye Pandemic Players.");
     }
 
-    private static void buildResearchStation(int cityNumber) {
+    /**
+     * A research station can be built by discarding the card matching the city you are in.
+     * @param cityNumber the cityNumber in which the research station should be built, if
+     * @param anywhere is true. if false, users will have to perform the rituals by discarding
+     * current city card.
+     */
+    private static void buildResearchStation(int cityNumber, boolean anywhere) {
         if (researchCt == 6) {
             throw new IllegalStateException("Maximum number of Research Stations reached.");
         }
         else {
-            for (int researchCity : researchStation) {
-                if (researchCity == cityNumber) {
-                    System.out.println("You can't build a research station here because it already has one.");
+            if (anywhere) {
+                for (int researchCity : researchStation) {
+                    if (researchCity == cityNumber) {
+                        System.out.println("You can't build a research station here because it already has one.");
+                        return;
+                    }
+                }
+                // Here, the research station is ready to be built
+                researchStation[researchCt] = cityNumber;
+                System.out.println("Research station successfully built in " + cities[cityNumber]);
+            }
+            else {
+                // Automatically check for card and discard if the required card is found.
+                int cardPosition = 0;  // to start.
+                boolean cardFound = false;
+                for (PandemicCard card : userHand[currentUser].getCardArray()) {
+                    if (card.getValue() == userLocation[currentUser]) {
+                        cardFound = true;
+                        break;
+                    }
+                    cardPosition++;
+                }
+
+                if (cardFound) {
+                    // Well, build the research station in the city you are currently in.
+                    researchStation[researchCt] = userLocation[currentUser];
+                    System.out.println("Research station successfully built in your current city " +
+                             cities[userLocation[currentUser]]);
+                    removeCard(cardPosition);  // Discard the card afterwards.
+                    checkAndCountActions();
+                }
+                else {
+                    System.out.println("No card matches your current city. Please perform another action.");
                     return;
                 }
             }
-            // Here, the research station is ready to be built
-            researchStation[researchCt] = cityNumber;
             // Increment the number of research stations built so far
             researchCt++;
         }
@@ -500,14 +534,14 @@ public class PandemicGame {
         redCt = 0;
         blackCt = 0;
 
-        for(int i = 0; i < 96; ++i) {
-            if (i < 24 && diseaseCubeCities[i] == cityNumber)
+        for(int position = 0; position < 96; position++) {
+            if (position < 24 && diseaseCubeCities[position] == cityNumber)
                 blueCt++;
-            else if (i < 48 && diseaseCubeCities[i] == cityNumber)
+            else if (position < 48 && diseaseCubeCities[position] == cityNumber)
                 yellowCt++;
-            else if (i < 72 && diseaseCubeCities[i] == cityNumber)
+            else if (position < 72 && diseaseCubeCities[position] == cityNumber)
                 redCt++;
-            else if (diseaseCubeCities[i] == cityNumber)
+            else if (diseaseCubeCities[position] == cityNumber)
                 blackCt++;
         }
     }
@@ -701,10 +735,10 @@ public class PandemicGame {
                     while (cityNumber < 0) {
                         cityNumber = doBuildResearch();
                         if (cityNumber < 0) {
-                            System.out.println("Type in a valid city number.");
+                            System.out.println("Type in a valid city.");
                         }
                     }
-                    buildResearchStation(cityNumber);
+                    buildResearchStation(cityNumber, true);
                 }
                 case PandemicCard.SOLVE_DISEASE -> {
                     freeCure = true;
@@ -821,43 +855,21 @@ public class PandemicGame {
 
     }
 
-    private static void doDirectFlight() {
+    /**
+     * Move to a city on a card by discarding the matching card from your hand.
+     */
+    private static void doDirectFlight(PandemicCard card) {
         checkAndCountActions();
     }
 
-    private static void doCharterFlight() {
-        Scanner in = new Scanner(System.in);
-        System.out.println("\nThese are the current cards in hand.");
-        printAllCards();
-        System.out.print("Please type in the card number: ");
+    /**
+     * Discard the card of the city you are currently in to travel to any other city on the map.
+     */
+    private static void doCharterFlight(PandemicCard card) {
 
-        try {
-            int cardNumber;
-            do {
-                do {
-                    cardNumber = in.nextInt();
-                    if (cardNumber < 1 || cardNumber > userHand[currentUser].getCardCount()) {
-                        System.out.print("Please type a valid card Number: ");
-                    }
-                } while (cardNumber < 1);
-            } while (cardNumber > userHand[currentUser].getCardCount());
 
-            PandemicCard card = userHand[currentUser].getCard(cardNumber);
-            if (card.getAttribute() == PandemicCard.EVENT_CARD) {
-                System.out.println("Card is an event card. You need a city card to perform Charter Flight. Perform another action.");
-                userHand[currentUser].addCard(cardNumber, card);
-                return;
-            }
-
-            if (card.getValue() != userLocation[currentUser]) {
-                System.out.println("Card does not match your current location. Please perform another action.");
-                userHand[currentUser].addCard(cardNumber, card);
-                return;
-            }
-        }
-        catch (Exception e) {
-            System.out.println(e.getMessage());
-            System.out.println("Please perform another action.");
+        if (card.getValue() != userLocation[currentUser]) {
+            System.out.println("Card does not match your current location. Please perform another action.");
             return;
         }
 
@@ -871,17 +883,50 @@ public class PandemicGame {
             if (cityAsValue > -1) {
                 userLocation[currentUser] = cityAsValue;
                 System.out.println(usernames[currentUser] + " is now in " + cities[userLocation[currentUser]] + ".");
-                checkAndCountActions();
+                checkAndCountActions();         // Counts Actions
                 return;
             }
 
             System.out.println("Please input a valid city.");
         }
-
     }
 
     private static void processActionCard(boolean doCharterFlight) {
+        // Write something here that probably explains Charter flight?
+        Scanner in = new Scanner(System.in);
+        System.out.println("\nThese are the current cards in hand.");
+        printAllCards();
+        System.out.print("Please type in the card number: ");
+        PandemicCard card;
+        try {
+            int cardNumber;
+            do {
+                do {
+                    cardNumber = in.nextInt();
+                    if (cardNumber < 1 || cardNumber > userHand[currentUser].getCardCount()) {
+                        System.out.print("Please type a valid card Number: ");
+                    }
+                } while (cardNumber < 1);
+            } while (cardNumber > userHand[currentUser].getCardCount());
 
+             card = userHand[currentUser].getCard(cardNumber);
+            if (card.getAttribute() == PandemicCard.EVENT_CARD) {
+                System.out.println("Card is an event card. You need a city card to perform Charter Flight. Perform another action.");
+                return;
+            }
+
+
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Please perform another action.");
+            return;
+        }
+
+        if(doCharterFlight)
+            doCharterFlight(card);
+        else
+            doDirectFlight(card);
     }
 
     /**
@@ -909,12 +954,9 @@ public class PandemicGame {
 
     private static void printResearchCities() {
         System.out.println("Research stations available: ");
-        int[] var0 = researchStation;
-        int var1 = var0.length;
 
-        for(int var2 = 0; var2 < var1; ++var2) {
-            int station = var0[var2];
-            if (station != -1) {
+        for(int station = 0; station < researchStation.length; station++) {
+            if (researchStation[station] != -1) {
                 System.out.println(cities[station]);
             }
         }
@@ -942,6 +984,10 @@ public class PandemicGame {
         return searchForCity();
     }
 
+    /**
+     * Build a research station by discarding the card matching the city the user is in
+     * @return
+     */
     private static int doBuildResearch() {
         System.out.println("Type the city you wish to build your research station in: ");
         return searchForCity();
@@ -991,8 +1037,9 @@ public class PandemicGame {
 
     /**
      * This subroutine ensures that the five cards picked by the user to turn in are valid.
-     * This a robust subroutine. Please read the inside comments.
-     * @param in
+     * This a robust subroutine. Please read the inside comments. If disease of that color has been
+     * cured, cards are still retained by the user and are allowed to perform another action.
+     * @param in for the scanner input.
      */
     private static void validateCardsAndCheckCure(Scanner in) {
         PandemicHand cardArray = new PandemicHand();
@@ -1000,7 +1047,7 @@ public class PandemicGame {
         int userInput = 0;
         int[] cardPositions = new int[5];   // For storing the five user input
 
-        for(int cardCount = 0; cardCount < 5; ++cardCount) {
+        for(int cardCount = 0; cardCount < 5; cardCount++) {
             do {
                 try {
                     System.out.print("? ");
@@ -1019,7 +1066,7 @@ public class PandemicGame {
         }
 
         // Here compare all five cards drawn into the temporary card Array
-        // Discard all five cards
+        // Discard all five cards if they have reached the last step of validation.
         // First check if their attributes match before discarding from the player
         for (int cardPosition = 0; cardPosition < cardArray.getCardCount(); cardPosition++) {
             // Check if card is an event card
