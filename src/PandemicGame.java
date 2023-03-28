@@ -1,3 +1,8 @@
+/**
+ * This is a very robust code for the console version of the Pandemic game. It is a cooperative game between users
+ * by which users work together to win the game. The game is lost when either the player deck finishes, the disease
+ * cubes finishes, or there is an eighth outbreak. This class makes use of fullmap.txt and PandemicGameInfo.txt
+ */
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -6,10 +11,9 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class PandemicGame {
-    // Declaration of all Global variables used in the game.
+    // Global declaration and initialization of variables used in the game.
     private static Scanner shellInput;
     private static boolean shellOpen = false;
-    private static Random randomGenerator = new Random(1);
     private static int numberCities = -1;
     private static int numberConnections = -1;
     private static String[] cities;
@@ -17,7 +21,6 @@ public class PandemicGame {
     private static int[][] connections;
     private static int[] userLocation;
     private static int currentUser = 0;
-    private static int countCheck = 0;
     private static final int MAX_USERS = 4;
     private static final String cityMapFileName = "C:\\Users\\DELL\\fullMap.txt";
     private static String[] usernames;
@@ -30,7 +33,7 @@ public class PandemicGame {
     private static final int PRINT_CONNECTIONS = 5;
     private static final int PRINT_ADJACENT_CITIES = 6;
     private static final int PRINT_DISEASES = 7;
-    private static final int REMOVE = 8;
+    private static final int TREAT_DISEASE = 8;
     private static final int PRINT_CARDS = 9;
     private static final int GET_STATUS = 10;
     private static final int DIRECT_FLIGHT = 11;
@@ -40,10 +43,9 @@ public class PandemicGame {
     private static final int PLAY_EVENT = 15;
 
     // Extra variables for the gameplay.
-    private static int addAction = 0;
-    private static int[] researchStation = new int[6];
-    private static int[] diseaseCubeCities = new int[96];
-    private static int[] remainingCubes = new int[4];
+    private static final int[] researchStation = new int[6];
+    private static final int[] diseaseCubeCities = new int[96];
+    private static final int[] remainingCubes = new int[4];
     private static int researchCt = 0;                          // variable to keep track of total research stations.
     private static final int BLUE_CUBE = 0;
     private static final int YELLOW_CUBE = 1;
@@ -88,7 +90,7 @@ public class PandemicGame {
             case "adjacent" -> PRINT_ADJACENT_CITIES;
             case "infections" -> PRINT_DISEASES;
             case "move" -> MOVE;
-            case "remove" -> REMOVE;
+            case "treat disease" -> TREAT_DISEASE;
             case "actions", "help" -> PRINT_ACTIONS;
             case "print cards" -> PRINT_CARDS;
             case "get status" -> GET_STATUS;
@@ -141,7 +143,7 @@ public class PandemicGame {
         System.out.println("adjacent");
         System.out.println("infections");
         System.out.println("move");
-        System.out.println("remove");
+        System.out.println("treat disease -- to remove one cube of a color from your current location.");
         System.out.println("actions");
         System.out.println("print cards -- to show cards in hand.");
         System.out.println("get status -- gets the info of the city you're in.");
@@ -178,10 +180,7 @@ public class PandemicGame {
             case PRINT_CONNECTIONS -> printConnections();
             case PRINT_ADJACENT_CITIES -> printAdjacentCities();
             case PRINT_DISEASES -> printInfectedCities();
-            case REMOVE -> {
-                if (removeCube())                                     // Check removeCube.
-                    checkAndCountActions();
-            }
+            case TREAT_DISEASE -> doTreatDisease();
             case PRINT_CARDS -> printAllCards();
             case GET_STATUS -> checkCityStatus(userLocation[currentUser]);
             case DIRECT_FLIGHT -> processActionCard(false);
@@ -398,7 +397,7 @@ public class PandemicGame {
                 }
                 return;
             }
-            System.out.println("Please input a valid number from 1 - 4.");
+            System.out.println("Please input a valid number from 1 - " + MAX_USERS);
         }
     }
 
@@ -515,19 +514,17 @@ public class PandemicGame {
     }
 
     private static void printDiseaseInCity(int cityNumber) {
-        countDiseaseCubes(cityNumber);
-        int total = blueCt + yellowCt + redCt + blackCt;
+        int totalDiseaseCubes = countDiseaseCubes(cityNumber);
         String city = cities[cityNumber];
         System.out.print("The number of cubes in " + city + ": ");
         if (blueCt == 0 && yellowCt == 0 && redCt == 0 && blackCt == 0)
             System.out.print("0");
         else
-            System.out.println("" + total + "\nBlue Disease: " + blueCt + ", Yellow Disease: "
+            System.out.println("" + totalDiseaseCubes + "\nBlue Disease: " + blueCt + ", Yellow Disease: "
                     + yellowCt + ",  Red Disease: " + redCt + ", Black Disease: " + blackCt);
-
     }
 
-    private static void countDiseaseCubes(int cityNumber) {
+    private static int countDiseaseCubes(int cityNumber) {
         // Re-initialize all the values for counting the number of individual cubes.
         blueCt = 0;
         yellowCt = 0;
@@ -544,6 +541,7 @@ public class PandemicGame {
             else if (diseaseCubeCities[position] == cityNumber)
                 blackCt++;
         }
+        return blueCt + yellowCt + redCt + blackCt;
     }
 
     private static void createInfection(int cityNumber, int noOfCubes, int cubeColor) {
@@ -883,7 +881,7 @@ public class PandemicGame {
             if (cityAsValue > -1) {
                 userLocation[currentUser] = cityAsValue;
                 System.out.println(usernames[currentUser] + " is now in " + cities[userLocation[currentUser]] + ".");
-                checkAndCountActions();         // Counts Actions
+                checkAndCountActions();         // Counts Action
                 return;
             }
 
@@ -940,8 +938,8 @@ public class PandemicGame {
             System.out.println("Research station city does not exist.");
         }
         else {
-            for(int city = 0; city < researchStation.length; city++) {
-                if (researchStation[city] == station) {
+            for (int city : researchStation) {
+                if (city == station) {
                     userLocation[currentUser] = station;
                     System.out.println("Shuttle flight to " + cities[userLocation[currentUser]] + " successful.");
                     checkAndCountActions();
@@ -962,7 +960,24 @@ public class PandemicGame {
         }
     }
 
-    private static void doTreatDisease(Scanner in) {
+    /**
+     * Prints out the number of disease cubes and their colors in the users current location
+     * then asks the user for the color to be treated. If a cure has been discovered, remove all
+     * the cubes of that color from the city as a single action.
+     */
+    private static void doTreatDisease() {
+        int total = countDiseaseCubes(userLocation[currentUser]);   // The total number of disease cubes
+        if(total == 0) {
+            System.out.println("The city you are has no disease cubes.");
+            return;
+        }
+        printDiseaseInCity(userLocation[currentUser]);
+        System.out.println("type in the color of the disease you want to treat (Or the cube you want to remove).");
+        Scanner in = new Scanner(System.in);
+        System.out.print("? ");
+        String userInput = in.nextLine();
+        userInput = userInput.toLowerCase().trim();
+
     }
 
     private static boolean removeCube() {                                               //Check this subroutine.
@@ -1135,12 +1150,20 @@ public class PandemicGame {
                 }
                 blackCure = true;
             }
-            default -> {
-                System.out.println("Please type in a valid color: Blue, yellow, red or black.");
-            }
+            default -> System.out.println("Please type in a valid color: Blue, yellow, red or black.");
         }
         System.out.println("Disease successfully solved.");
         foundCure++;
         return true;
+    }
+
+
+    //----------------------------------------------------------- Nested Agent Class ------------------------------------------------------------------
+
+    /**
+     * Class for the Agent, runs background calculations and gives desired output.
+     */
+    public class AgentAssist extends Thread {
+
     }
 }
