@@ -64,8 +64,9 @@ public class PandemicGame {
     private static boolean yellowCure;
     private static boolean redCure;
     private static boolean blackCure;
+    private static final boolean[] cureFound = new boolean[4];
     private static boolean gameOver;
-    private static final String[] color = new String[]{"blue", "yellow", "red", "black"};
+    private static final String[] color = {"blue", "yellow", "red", "black"};
     private static int blueCt;
     private static int yellowCt;
     private static int redCt;
@@ -978,20 +979,53 @@ public class PandemicGame {
         String userInput = in.nextLine();
         userInput = userInput.toLowerCase().trim();
 
+        int cubeValue = switch (userInput) {
+            case "blue cube", "blue", "blue disease" -> BLUE_CUBE;
+            case "yellow cube", "yellow", "yellow disease" -> YELLOW_CUBE;
+            case "red cube", "red", "red disease" -> RED_CUBE;
+            case "black cube", "black", "black disease" -> BLACK_CUBE;
+            default -> -1;
+        };
+
+        if (cubeValue < 0) {
+            System.out.println("Couldn't decipher user input. Try another action.");
+            return;
+        }
+        removeCube(cubeValue);
     }
 
-    private static boolean removeCube() {                                               //Check this subroutine.
+    private static void removeCube(int cubeColor) {
+        int cubeCount = 0;
+        // To initialize the start and end of each disease cube color array.
+        int cubeEnd = switch (cubeColor) {
+            case BLUE_CUBE -> 24;
+            case YELLOW_CUBE -> 48;
+            case RED_CUBE -> 72;
+            default -> 96;
+        };
+
         int currentUserLocation = userLocation[currentUser];
-        if (diseaseCubes[currentUserLocation] > 0) {
-            diseaseCubes[currentUserLocation]--;
-            int cubesLeft = diseaseCubes[currentUserLocation];
-            System.out.println("There are " + cubesLeft + " left");
-            return true;
+
+        // Search the array range and find out if the city is in that range
+        for (int cityNumber = cubeEnd - 24; cityNumber < cubeEnd; cityNumber++) {
+            if(diseaseCubeCities[cityNumber] == currentUserLocation) {
+                // Now check if the disease has been cured. If yes, remove all cubes in one action.
+                diseaseCubeCities[cityNumber] = -1;
+                cubeCount++;
+                // If cure is not found, just break the loop.
+                if(! cureFound[cubeColor])
+                    break;
+            }
         }
-        else {
-            System.out.println("The space you're on has no disease cubes.");
-            return false;
+
+        //If cube was not found, return.
+        if(cubeCount == 0) {
+            System.out.println("No cube of " + color[cubeColor] + " found in your current location.");
+            return;
         }
+        System.out.println(cubeCount + " cube(s) of " + color[cubeColor] + " removed from your location " +
+                userLocation[currentUser]);
+        checkAndCountActions();
     }
 
     private static int doFlyAnywhere() {
@@ -1114,9 +1148,8 @@ public class PandemicGame {
         }
         else {
             // Discard the users cards
-            for (int position : cardPositions) {
+            for (int position : cardPositions)
                 removeCard(position);
-            }
         }
     }
 
@@ -1128,6 +1161,7 @@ public class PandemicGame {
                     return false;
                 }
                 redCure = true;
+                cureFound[RED_CUBE]= true;
             }
             case "blue" -> {
                 if (blueCure) {
@@ -1135,6 +1169,7 @@ public class PandemicGame {
                     return false;
                 }
                 blueCure = true;
+                cureFound[BLUE_CUBE] = true;
             }
             case "yellow" -> {
                 if (yellowCure) {
@@ -1142,6 +1177,7 @@ public class PandemicGame {
                     return false;
                 }
                 yellowCure = true;
+                cureFound[YELLOW_CUBE] = true;
             }
             case "black" -> {
                 if (blackCure) {
@@ -1149,8 +1185,12 @@ public class PandemicGame {
                     return false;
                 }
                 blackCure = true;
+                cureFound[BLACK_CUBE] = true;
             }
-            default -> System.out.println("Please type in a valid color: Blue, yellow, red or black.");
+            default -> {
+                System.out.println("Please type in a valid color: Blue, yellow, red or black.\nTry another action.");
+                return false;
+            }
         }
         System.out.println("Disease successfully solved.");
         foundCure++;
