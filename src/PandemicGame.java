@@ -127,7 +127,7 @@ public class PandemicGame {
     }
 
     private static void printAdjacentCities() {
-        for(int cityNumber = 0; cityNumber < numberCities; ++cityNumber) {
+        for(int cityNumber = 0; cityNumber < numberCities; cityNumber++) {
             if (citiesAdjacent(userLocation[currentUser], cityNumber)) {
                 System.out.println(cities[cityNumber]);
             }
@@ -158,10 +158,9 @@ public class PandemicGame {
     private static void printUserLocations() {
         System.out.println("The current user is " + usernames[currentUser]);
 
-        for(int userNumber = 0; userNumber < NUMBER_USERS; ++userNumber) {
+        for(int userNumber = 0; userNumber < NUMBER_USERS; userNumber++) {
             int printUserLocation = userLocation[userNumber];
-            String var10001 = usernames[userNumber];
-            System.out.println(var10001 + " is in " + cities[printUserLocation]);
+            System.out.println(usernames[userNumber] + " is in " + cities[printUserLocation]);
         }
 
     }
@@ -263,11 +262,10 @@ public class PandemicGame {
 
     private static int getCityOffset(String cityName) {
         for(int cityNumber = 0; cityNumber < numberCities; ++cityNumber) {
-            if (cityName.compareTo(cities[cityNumber]) == 0) {
+            if (cityName.compareToIgnoreCase(cities[cityNumber]) == 0) {
                 return cityNumber;
             }
         }
-
         return -1;
     }
 
@@ -404,7 +402,7 @@ public class PandemicGame {
 
     public static void main(String[] args) {
         boolean gameDone = false;
-        System.out.println("Hello Pandemic Tester");
+        System.out.println("Konnichiwaaa!");
 
         try {
             getUsers();
@@ -418,6 +416,7 @@ public class PandemicGame {
         while(!gameDone || !gameOver) {
             try {
                 int userInput = getUserInput();
+                //Tell the users the actions here...read from file PandemicGameInfo.txt
                 gameDone = processUserCommand(userInput);
             }
             catch (Exception e) {
@@ -519,7 +518,7 @@ public class PandemicGame {
         String city = cities[cityNumber];
         System.out.print("The number of cubes in " + city + ": ");
         if (blueCt == 0 && yellowCt == 0 && redCt == 0 && blackCt == 0)
-            System.out.print("0");
+            System.out.println("0");
         else
             System.out.println("" + totalDiseaseCubes + "\nBlue Disease: " + blueCt + ", Yellow Disease: "
                     + yellowCt + ",  Red Disease: " + redCt + ", Black Disease: " + blackCt);
@@ -695,6 +694,7 @@ public class PandemicGame {
     private static void playEvent() {
         Scanner in = new Scanner(System.in);
         System.out.println("Card position: ");
+        String cardName = null;
 
         int cardPosition;
         while(true) {
@@ -724,6 +724,7 @@ public class PandemicGame {
                             System.out.println("Type in a valid city number.");
                         }
                     }
+                    cardName = "FLY ANYWHERE";
                     userLocation[currentUser] = cityNumber;
                 }
                 case PandemicCard.BUILD_R_ANYWHERE -> {
@@ -737,14 +738,21 @@ public class PandemicGame {
                             System.out.println("Type in a valid city.");
                         }
                     }
+                    cardName = "BUILD RESEARCH ANYWHERE";
                     buildResearchStation(cityNumber, true);
                 }
                 case PandemicCard.SOLVE_DISEASE -> {
                     freeCure = true;
+                    cardName = "SOLVE DISEASE";
                     doSolveDisease(in);
                 }
-                default -> addMove = true;
+                default -> {
+                    addMove = true;
+                    cardName = "ADD MOVE";
+                }
             }
+            System.out.println(card.getAttribute() + ": " + cardName + " played successfully");
+            removeCard(cardPosition - 1);    // Discard the card.
             checkAndCountActions();
         }
     }
@@ -822,6 +830,7 @@ public class PandemicGame {
             doEpidemics(card.getValue(), 1, card.getAttribute());
             infectionDiscardPile.addCard(card);
         }
+        System.out.println("Infection card drawn.");
     }
 
     private static void doOutbreak(int outbreakCityNumber, int cubeColor) {
@@ -848,24 +857,28 @@ public class PandemicGame {
         playerDeck.shuffle();
         Random rand = new Random();
 
-        for(int i = 0; i < 4; ++i) {
-            playerDeck.addCard(rand.nextInt(24) + i * 24, hand.getCard(i));
+        for(int iterator = 0; iterator < 4; iterator++) {
+            playerDeck.addCard(rand.nextInt(24) + iterator * 24, hand.getCard(iterator));
         }
-
+        System.out.println("Epidemic Deck has been created.");
     }
 
     /**
      * Move to a city on a card by discarding the matching card from your hand.
      */
-    private static void doDirectFlight(PandemicCard card) {
+    private static void doDirectFlight(PandemicCard card, int cardNumber) {
+        userLocation[currentUser] = card.getValue();
+
+        System.out.println("");
         checkAndCountActions();
+        System.out.println("Direct Flight Successful.");
+        System.out.println("You're now in " + cities[userLocation[currentUser]]);
     }
 
     /**
      * Discard the card of the city you are currently in to travel to any other city on the map.
      */
-    private static void doCharterFlight(PandemicCard card) {
-
+    private static void doCharterFlight(PandemicCard card, int cardNumber) {
 
         if (card.getValue() != userLocation[currentUser]) {
             System.out.println("Card does not match your current location. Please perform another action.");
@@ -882,6 +895,7 @@ public class PandemicGame {
             if (cityAsValue > -1) {
                 userLocation[currentUser] = cityAsValue;
                 System.out.println(usernames[currentUser] + " is now in " + cities[userLocation[currentUser]] + ".");
+                removeCard(cardNumber);         // Discard card
                 checkAndCountActions();         // Counts Action
                 return;
             }
@@ -897,8 +911,8 @@ public class PandemicGame {
         printAllCards();
         System.out.print("Please type in the card number: ");
         PandemicCard card;
+        int cardNumber;
         try {
-            int cardNumber;
             do {
                 do {
                     cardNumber = in.nextInt();
@@ -908,7 +922,7 @@ public class PandemicGame {
                 } while (cardNumber < 1);
             } while (cardNumber > userHand[currentUser].getCardCount());
 
-             card = userHand[currentUser].getCard(cardNumber);
+            card = userHand[currentUser].getCard(cardNumber);
             if (card.getAttribute() == PandemicCard.EVENT_CARD) {
                 System.out.println("Card is an event card. You need a city card to perform Charter Flight. Perform another action.");
                 return;
@@ -923,9 +937,9 @@ public class PandemicGame {
         }
 
         if(doCharterFlight)
-            doCharterFlight(card);
+            doCharterFlight(card,cardNumber);
         else
-            doDirectFlight(card);
+            doDirectFlight(card,cardNumber);
     }
 
     /**
