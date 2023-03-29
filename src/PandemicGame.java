@@ -1,18 +1,20 @@
 /**
  * This is a very robust code for the console version of the Pandemic game. It is a cooperative game between users
  * by which users work together to win the game. The game is lost when either the player deck finishes, the disease
- * cubes finishes, or there is an eighth outbreak. This class makes use of fullmap.txt and PandemicGameInfo.txt
+ * cubes finishes, or there is an eighth outbreak. This class makes use of fullMap.txt and PandemicGameInfo.txt
  */
 
+// Import all files, File for reading from an external file,
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 
 public class PandemicGame {
     // Global declaration and initialization of variables used in the game.
-    private static Scanner shellInput;
+    private static Scanner shellInput;                  // For the user's input (super), for actions.
     private static boolean shellOpen = false;
     private static int numberCities = -1;
     private static int numberConnections = -1;
@@ -22,8 +24,10 @@ public class PandemicGame {
     private static int[] userLocation;
     private static int currentUser = 0;
     private static final int MAX_USERS = 4;
-    private static final String cityMapFileName = "C:\\Users\\DELL\\fullMap.txt";
-    private static String[] usernames;
+    private static final String cityMapFileName = "C:\\Users\\DELL\\Pandemic\\fullMap.txt";  // Where the map is stored.
+    private static final String gameInfoFileName = "C:\\Users\\DELL\\Pandemic\\PandemicGameInfo.txt"; // Description of the game is stored here.
+    private static String[] usernames;                  // For storing the usernames of the players
+    // Static final variables for some constants that will be used throughout the game.
     private static int NUMBER_USERS = 0;
     private static final int QUIT = 0;
     private static final int PRINT_LOCATION = 1;
@@ -58,21 +62,21 @@ public class PandemicGame {
     private static PandemicHand infectionDiscardPile;
     private static int outbreak;
     private static int foundCure;
-    private static int infectionRate = 1;
-    private static boolean freeCure;
-    private static boolean blueCure;
+    private static int infectionRate = 1;  // Increments whenever an Epidemic card is drawn
+    private static boolean freeCure;    // For special cad solve disease.
+    private static boolean blueCure;    // This and the latter three to keep track of whether the diseases have been cured or not.
     private static boolean yellowCure;
     private static boolean redCure;
     private static boolean blackCure;
-    private static final boolean[] cureFound = new boolean[4];
-    private static boolean gameOver;
-    private static final String[] color = {"blue", "yellow", "red", "black"};
-    private static int blueCt;
+    private static final boolean[] cureFound = new boolean[4];  // So the curefound can be iterated through from 0 to 3.
+    private static boolean gameOver;   // To change the game state based on some certain criteria
+    private static final String[] color = {"blue", "yellow", "red", "black"};  // So the colors in String format can be iterated through
+    private static int blueCt;   // Global variable for the number of blue cubes counted in a particular city. This also applies for the next three.
     private static int yellowCt;
     private static int redCt;
     private static int blackCt;
     private static boolean addMove = false;  // variable for the add move special card.
-    private static int addCount = 0;
+    private static int addCount = 0;  // if the add move special card is played, increment addCount by 2.
 
     /**
      * Takes in a user input as a String and gives an integer equivalent output
@@ -104,6 +108,12 @@ public class PandemicGame {
         };
     }
 
+    /**
+     * This should be the main method called during any root action time. Base action in the sense that
+     * there are some actions that leads to other actions, each have there individual scanner class to take
+     * in user input. Return or end each major method to loop back to this one.
+     * @return
+     */
     private static int getUserInput() {
         boolean gotReasonableInput = false;
         int processedUserInput = -1;
@@ -112,6 +122,7 @@ public class PandemicGame {
             shellOpen = true;
         }
 
+        // loop while the user's input is invalid/illegal
         while(!gotReasonableInput) {
             String userInput = shellInput.nextLine();
             processedUserInput = processUserInput(userInput);
@@ -122,10 +133,10 @@ public class PandemicGame {
                 System.out.println(userInput + " is not a good command. Try 'actions'.");
             }
         }
-
         return processedUserInput;
     }
 
+    // Print Adjacent cities associated with the users current location
     private static void printAdjacentCities() {
         for(int cityNumber = 0; cityNumber < numberCities; cityNumber++) {
             if (citiesAdjacent(userLocation[currentUser], cityNumber)) {
@@ -135,6 +146,9 @@ public class PandemicGame {
 
     }
 
+    /**
+     * Print the total list of actions the user can make, with its descriptions.
+     */
     private static void printActions() {
         System.out.println("Type in on the terminal with the following followed by no spaces finish with return.");
         System.out.println("quit");
@@ -155,6 +169,7 @@ public class PandemicGame {
         System.out.println("Play Event -- Play an event card if you have one. it is considered as an action.");
     }
 
+    // Prints out the location of each user
     private static void printUserLocations() {
         System.out.println("The current user is " + usernames[currentUser]);
 
@@ -165,6 +180,7 @@ public class PandemicGame {
 
     }
 
+    // Handle user commands with its associated methods.
     private static boolean processUserCommand(int userInput) {
         switch (userInput) {
             case QUIT -> {
@@ -193,8 +209,9 @@ public class PandemicGame {
         return false;
     }
 
+    // Move the user from one city to any adjacent city from that city
     private static void moveUser() {
-        boolean moved = false;
+        boolean moved = false;      // variable to check if the move was legal.
 
         System.out.println("type where you'd like to move.");
         System.out.println("You can move to ");
@@ -217,6 +234,12 @@ public class PandemicGame {
 
     }
 
+    /**
+     * After each player action, this checks, and counts actions if a special event card "add move" has been played
+     * Set the addCount to two, and return from the method to let the player do another action
+     * Play all compulsory moves -- Draw Player Card and Draw infectionCard for last. Switch to the next player if there
+     * is more than one player.
+     */
     private static void checkAndCountActions() {
         if (addMove) {
             System.out.println(usernames[currentUser] + " perform another action.");
@@ -225,8 +248,8 @@ public class PandemicGame {
             System.out.println("No. of moves left: " + addCount);
             return;
         }
-        if(addCount > 0) {
-            addCount--;
+        if(addCount > 0) {  // User still has some moves left.
+            addCount--;     // Decrement addCount.
             System.out.println("No. of moves left: " + addCount);
             System.out.println("Perform another action.");
             return;
@@ -237,12 +260,14 @@ public class PandemicGame {
 
     }
 
+    // Switch to the next user, modulo the number of users.
     private static void actionDone() {
         currentUser++;
         currentUser %= NUMBER_USERS;
         System.out.println("It's now " + usernames[currentUser] + "'s turn.");
     }
 
+    // Read all cities using a scanner
     private static void readCities(int numCities, Scanner in) {
         for(int cityNumber = 0; cityNumber < numCities; cityNumber++) {
             String cityName = in.nextLine();
@@ -251,17 +276,33 @@ public class PandemicGame {
 
     }
 
+    // Read the game description from a file, catch IOException if it crashes.
+    private static void readAndPrintGameInfo() {
+        File gameInfoFile = new File(gameInfoFileName);
+
+        try (Scanner fileInput = new Scanner(gameInfoFile)) {
+            while (fileInput.hasNextLine())
+                System.out.println("   " + fileInput.nextLine());
+        }
+        catch (IOException e) {
+            System.out.println("An error occurred when reading from file.");
+            e.printStackTrace();
+        }
+    }
+
+    // Print all the cities present in the game.
     private static void printCities() {
         System.out.println(numberCities + " Cities.");
 
-        for(int i = 0; i < numberCities; ++i) {
-            System.out.println(cities[i]);
+        for(int cityNumber = 0; cityNumber < numberCities; cityNumber++) {
+            System.out.println(cities[cityNumber]);
         }
-
     }
 
+    //Loop through the city array, and return the offset of the cityName parameter in that
+    //array.  Return -1 if the cityName is not in the array.
     private static int getCityOffset(String cityName) {
-        for(int cityNumber = 0; cityNumber < numberCities; ++cityNumber) {
+        for(int cityNumber = 0; cityNumber < numberCities; cityNumber++) {
             if (cityName.compareToIgnoreCase(cities[cityNumber]) == 0) {
                 return cityNumber;
             }
@@ -269,22 +310,28 @@ public class PandemicGame {
         return -1;
     }
 
+    //Look through the connections and see if the city numbers are in them.  If
+    //Return whether they are in the list.
     private static boolean citiesAdjacent(int city1, int city2) {
-        for(int compareConnection = 0; compareConnection < numberConnections; ++compareConnection) {
+        for(int compareConnection = 0; compareConnection < numberConnections; compareConnection++) {
             if (connections[0][compareConnection] == city1 && connections[1][compareConnection] == city2) {
                 return true;
             }
-
+            // Swap city1 and city 2 positions, because comparison goes both ways
             if (connections[0][compareConnection] == city2 && connections[1][compareConnection] == city1) {
                 return true;
             }
         }
-
+        // City is not adjacent.
         return false;
     }
 
+    // Read the specified number of connections. If it throws an exception, it is caught by its calling catch call.
     private static void readConnections(int numConnections, Scanner scanner) {
-        for(int connectionNumber = 0; connectionNumber < numConnections; ++connectionNumber) {
+        //A simple loop reading connections in.  It assumes the file is text with the last
+        //character of the line being the last letter of the city name.  The two
+        //cities are separated by a ; with no spaces
+        for(int connectionNumber = 0; connectionNumber < numConnections; connectionNumber++) {
             String connectionName = scanner.nextLine();
             String[] cityName = connectionName.split(";");
             int firstCityOffset = getCityOffset(cityName[0]);
@@ -295,6 +342,7 @@ public class PandemicGame {
 
     }
 
+    // Print out the full list of connections.
     private static void printConnections() {
         System.out.println(numberConnections + " Connections.");
 
@@ -303,22 +351,27 @@ public class PandemicGame {
             String secondCity = cities[connections[1][connectionNumber]];
             System.out.println(firstCity + " " + secondCity);
         }
-
     }
 
+    // Open the city file, allocate the space for the cities, and connections, then read the
+    // cities, and then read the connections.  It uses those class variables.
     private static void readCityGraph() {
         try {
             File fileHandle = new File(cityMapFileName);
             Scanner mapFileReader = new Scanner(fileHandle);
+
             numberCities = mapFileReader.nextInt();
-            mapFileReader.nextLine();
+            mapFileReader.nextLine();   // read and discard the next line after the int.
+
             cities = new String[numberCities];
             diseaseCubes = new int[numberCities];
+
             numberConnections = mapFileReader.nextInt();
             mapFileReader.nextLine();
+
             connections = new int[2][numberConnections];
-            readCities(numberCities, mapFileReader);
-            readConnections(numberConnections, mapFileReader);
+            readCities(numberCities, mapFileReader);        // read cities
+            readConnections(numberConnections, mapFileReader);  // read connections
             mapFileReader.close();
         }
         catch (FileNotFoundException e) {
@@ -328,26 +381,32 @@ public class PandemicGame {
 
     }
 
+    // Prints the cities already infected by a disease.
     private static void printInfectedCities() {
-        for(int cityNumber = 0; cityNumber < numberCities; ++cityNumber) {
-            if (diseaseCubes[cityNumber] > 0) {
+        for(int cityNumber = 0; cityNumber < diseaseCubeCities.length; cityNumber++) {
+            if (diseaseCubeCities[cityNumber] > 0) {
                 String city = cities[cityNumber];
-                System.out.println(city + " has " + diseaseCubes[cityNumber] + " cubes.");
+                System.out.println(city + " has been infected.");
+                // Print a detailed account of the disease found and the color
+                printDiseaseInCity(cityNumber);
             }
         }
-
     }
 
+    /**
+     * Initialize the number of users.
+     */
     public static void getUsers() {
         int position = 0;
         Scanner in = new Scanner(System.in);
-        System.out.println("This game allows a maximum of 4 users.");
+        System.out.println("This game allows a maximum of " + MAX_USERS + " users.");
         System.out.print("Enter the number of users: ");
 
         while(true) {
             int noOfUsers;
             while(true) {
                 try {
+                    System.out.print("? ");
                     noOfUsers = Integer.parseInt(in.nextLine());
                     break;
                 }
@@ -402,7 +461,10 @@ public class PandemicGame {
 
     public static void main(String[] args) {
         boolean gameDone = false;
-        System.out.println("Konnichiwaaa!");
+        System.out.println("Konnichiwaa!");
+        System.out.println();
+
+        readAndPrintGameInfo();
 
         try {
             getUsers();
@@ -416,7 +478,6 @@ public class PandemicGame {
         while(!gameDone || !gameOver) {
             try {
                 int userInput = getUserInput();
-                //Tell the users the actions here...read from file PandemicGameInfo.txt
                 gameDone = processUserCommand(userInput);
             }
             catch (Exception e) {
@@ -945,7 +1006,7 @@ public class PandemicGame {
     /**
      * Move between research stations
      */
-    private static void doShuttleFlight() {                                                                         // This method is incomplete
+    private static void doShuttleFlight() {
         printResearchCities();
         System.out.println("Which research station do you wish to fly to: ");
         int station = searchForCity();
