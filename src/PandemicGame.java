@@ -5,10 +5,12 @@
  */
 
 // Import all files, File for reading from an external file,
+import javax.swing.event.TreeExpansionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -850,11 +852,12 @@ public class PandemicGame {
             System.out.println("Card is not an event card. Please perform another action.");
         }
         else {
+            // Two loops for the ones that require a correct value from the user
             int cityNumber = -1;
             switch (card.getValue()) {
                 case PandemicCard.FLY_ANYWHERE -> {
                     while (cityNumber < 0) {
-                        cityNumber = doFlyAnywhere();
+                        cityNumber = doFlyAnywhere();  // returns the value of the city Number.
                         if (cityNumber < 0) {
                             System.out.println("Type in a valid city number.");
                         }
@@ -892,6 +895,8 @@ public class PandemicGame {
         }
     }
 
+    // Part of the initialization. Deals the initial player cards to the user
+    // The number of cards dealt to each user depends on the total number of users playing the game.
     private static void dealInitialCards() {
         PandemicHand hand = new PandemicHand();
 
@@ -911,61 +916,78 @@ public class PandemicGame {
                 userHand[userNumber].addCard(playerDeck.dealCard());
             }
         }
+        // After dealing cards to the players, create the epidemic deck.
         createEpidemicDeck(hand);
     }
 
+    /**
+     * Draw an epidemic card. Epidemic cards are not added to the user's hand, thus they are handled,
+     * executed, put in the infection discard pile, shuffled and stacked back on top of the infection
+     * deck.
+     * @param card
+     */
     private static void drawEpidemicCard(PandemicCard card) {
-        PandemicHand hand = new PandemicHand();
-        hand.addCard(card);
+        PandemicHand hand = new PandemicHand();     // create a temporary hand to hold the epidemic card
+        hand.addCard(card);     // add the card to the hand
         PandemicCard infectionCard = infectionDeck.removeBottom();
-        System.out.println("Epidemic card drawn.");
+
         int value = infectionCard.getValue();
         String city = cities[value];
         System.out.println("Infection card drawn from deck bottom. Card: " + city + " " + infectionCard.getAttributeAsString());
         doEpidemics(value, 3, infectionCard.getAttribute());
         infectionDiscardPile.addCard(infectionCard);
-        infectionDiscardPile.shuffle();
+        infectionDiscardPile.shuffle();     // shuffle the pile after epidemics has been executed.
 
+        // For each card in the pile, stack all back to the top of the deck.
         for (PandemicCard cardToStack : infectionDiscardPile.getCardArray()) {
             infectionDeck.addToDeck(cardToStack);
         }
-
+        // Clear the pile for new drawn infection cards in the future
         infectionDiscardPile.clear();
+        // Intensify! The number of infection cards drawn at the end of each turn is now (+1)
         infectionRate++;
     }
 
+    /**
+     * Do epidemics anytime an infection card is drawn
+     * @param cityNumber in which the epidemic should occur
+     * @param noOfCubes the number of cubes that should be added to the specified city
+     * @param cubeColor the color of cube(s)
+     */
     private static void doEpidemics(int cityNumber, int noOfCubes, int cubeColor) {
-        if ((cubeColor != 0 || !blueCure) && (cubeColor != 1 || !yellowCure) && (cubeColor != 2 || !redCure)
-                && (cubeColor != 3 || !blackCure)) {
+        // Crosscheck if really an epidemic should occur.
+        if ((cubeColor != BLUE_CUBE && !blueCure) || (cubeColor != YELLOW_CUBE && !yellowCure) ||
+                (cubeColor != RED_CUBE && !redCure) || (cubeColor != 3 && !blackCure)) {
 
             // For setting the end array for a particular cube.
             int cubeEnd = switch (cubeColor) {
-                case 0 -> 24;
-                case 1 -> 48;
-                case 2 -> 72;
+                case BLUE_CUBE -> 24;
+                case YELLOW_CUBE -> 48;
+                case RED_CUBE -> 72;
                 default -> 96;
             };
 
-            if (checkOutbreak(cityNumber, noOfCubes, cubeEnd)) {
+            // Check if an outbreak would occur. If yes, do the outbreak
+            // If no, just add the required number of cubes to the city
+            if (checkOutbreak(cityNumber, noOfCubes, cubeEnd))
                 doOutbreak(cityNumber, cubeColor);
-            }
-            else {
+            else
                 createInfection(cityNumber, noOfCubes, cubeColor);
-            }
-
         }
-        else {
-            System.out.println(color[cubeColor] + " has already been cured");
-        }
+        else
+            //Disease has already been cured. Return.
+            System.out.println(color[cubeColor] + " disease/cube has already been cured.");
     }
 
+    // The number of infection cards drawn depends on the infection rate
     private static void drawInfectionCard() {
-        for(int cardCt = 0; cardCt < infectionRate; ++cardCt) {
+        for(int cardCt = 0; cardCt < infectionRate; cardCt++) {
             PandemicCard card = infectionDeck.removeBottom();
             doEpidemics(card.getValue(), 1, card.getAttribute());
             infectionDiscardPile.addCard(card);
         }
-        System.out.println("Infection card drawn.");
+        String word = infectionRate > 1 ? "cards" : "card";
+        System.out.println("Infection " + word + " drawn.");
     }
 
     private static void doOutbreak(int outbreakCityNumber, int cubeColor) {
@@ -1352,7 +1374,26 @@ public class PandemicGame {
     /**
      * Class for the Agent, runs background calculations and gives desired output.
      */
-    public class AgentAssist extends Thread {
+    public class SimpleAgent extends Thread {
+
+        // Search through the city and user hand card and search for cubes in the cities. Print out
+        // danger zones and safe zones and possibly advice on where to move next based on the cards
+        // in the user's hand.
+        private LinkedList<Integer> dangerZones = new LinkedList<>();
+        private LinkedList<Integer> safeZones = new LinkedList<>();
+
+        public static void printCards() {
+
+        }
+
+        public int getProbability(PandemicCard card) {
+            // Write probability definition here
+            return -1;
+        }
+
+        public void run() {
+            // Search and prepare probability tree.
+        }
 
     }
 }
