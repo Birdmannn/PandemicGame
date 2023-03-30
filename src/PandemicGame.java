@@ -9,10 +9,7 @@ import javax.swing.event.TreeExpansionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class PandemicGame {
     // Global declaration and initialization of variables used in the game.
@@ -1227,6 +1224,8 @@ public class PandemicGame {
         return -1;
     }
 
+    // Checks if the current user is in a city that contains a research station. You can cure diseases only
+    // in a research station.
     private static void doSolveDisease(Scanner in) {
         boolean rightLocation = false;          // variable for checking if the user is in the right location
         // Check if the user is in a research station. Diseases can only be solved in research stations
@@ -1238,8 +1237,8 @@ public class PandemicGame {
         }
         if(!rightLocation) {
             // User is in the wrong location and needs to get to the right location
-            System.out.println("You're in " + cities[userLocation[currentUser]] + ", Which is not a research" +
-                    " station.");
+            String city = cities[userLocation[currentUser]];
+            System.out.println("You're in " + city + ". " + city + " does not have a research station.");
             return;
         }
         if (!freeCure) {
@@ -1324,6 +1323,8 @@ public class PandemicGame {
         }
     }
 
+    // Check if a specified disease cube color has been cured, if not, cure them by setting all the
+    // boolean variables corresponding to the color to true.
     private static boolean checkCure(String color) {
         switch (color.toLowerCase()) {
             case "red" -> {
@@ -1372,7 +1373,9 @@ public class PandemicGame {
     //----------------------------------------------------------- Nested Agent Class ------------------------------------------------------------------
 
     /**
-     * Class for the Agent, runs background calculations and gives desired output.
+     * Extends thread to run background calculations and give output. Works of an agent can be found in some
+     * methods written above. But there ae some in which the run() method has to keep running and updating the
+     * values of the private parameters
      */
     public class SimpleAgent extends Thread {
 
@@ -1381,18 +1384,59 @@ public class PandemicGame {
         // in the user's hand.
         private LinkedList<Integer> dangerZones = new LinkedList<>();
         private LinkedList<Integer> safeZones = new LinkedList<>();
+        private Set<Integer> removedCards = new HashSet<>();
 
-        public static void printCards() {
+        private PandemicDeck deckCopy;        // A pointer to the player deck.
+        public String printCardStatus(int size) {
+            switch (size) {
+                case 5 -> {
+                    this.interrupt();
+                    return "Critical condition!" + " Number of cards left: 5";
+                }
+                case 10 -> "Cards reducing. Cards left: 10";
+                case 30 -> " Half of Deck reached, play carefully";
+            };
 
         }
 
-        public int getProbability(PandemicCard card) {
+        //Input String from the user
+        public void inputCommand(String userInput) {
+            System.out.print("Yes? ");
+            int cityNumber = 0;
+            String[] keyWords = {"probability", "percentage", "card", "danger", "status", "Where am I",
+             "location."};
+            String word = userInput.toLowerCase();
+            if (word.contains(keyWords[0]) || (word.contains(keyWords[0]) && word.contains(keyWords[2]))) {
+                for (String city : cities) {
+                    if (word.toLowerCase().contains(city.toLowerCase())) {
+                        getProbability(cityNumber);
+                        break;
+                    }
+                    cityNumber++;
+                }
+            }
+
+        }
+        public int getProbability(int cardNumber) {
             // Write probability definition here
+            deckCopy = playerDeck;      // pointer to playerDeck.
+            this.start();
             return -1;
         }
 
         public void run() {
-            // Search and prepare probability tree.
+
+            while(true) {
+                if(playerDeck.size() == 5 || playerDeck.size() == 10 || playerDeck.size() == 30) {
+                    printCardStatus(playerDeck.size());
+                }
+                try {
+                    Thread.sleep(8000);
+                }
+                catch (InterruptedException e) {}
+            }
+
+
         }
 
     }
