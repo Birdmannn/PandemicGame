@@ -5,7 +5,6 @@
  */
 
 // Import all files, File for reading from an external file,
-import javax.swing.event.TreeExpansionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -15,6 +14,8 @@ public class PandemicGame {
     // Global declaration and initialization of variables used in the game.
     private static Scanner shellInput;                  // For the user's input (super), for actions.
     private static boolean shellOpen = false;
+    private static boolean useAgent = false;
+    private static SimpleAgent agentHandler;            // Won't start until initialized by user.
     private static int numberCities = -1;
     private static int numberConnections = -1;
     private static String[] cities;
@@ -44,6 +45,7 @@ public class PandemicGame {
     private static final int SHUTTLE_FLIGHT = 13;
     private static final int BUILD_RESEARCH = 14;
     private static final int PLAY_EVENT = 15;
+    private static final int AGENT = 16;
 
     // Extra variables for the gameplay.
     private static final int[] researchStation = new int[6];
@@ -103,6 +105,7 @@ public class PandemicGame {
             case "shuttle flight" -> SHUTTLE_FLIGHT;
             case "build research" -> BUILD_RESEARCH;
             case "play event" -> PLAY_EVENT;
+            case "agent" -> AGENT;
             default -> -1;
         };
     }
@@ -166,6 +169,7 @@ public class PandemicGame {
         System.out.println("Shuttle Flight -- Move between research stations.");
         System.out.println("Build Research -- Discard the card matching a city you're in.");
         System.out.println("Play Event -- Play an event card if you have one. it is considered as an action.");
+        System.out.println("Agent -- Use agent and get extra help and services.");
     }
 
     // Prints out the location of each user
@@ -204,6 +208,7 @@ public class PandemicGame {
             case BUILD_RESEARCH -> buildResearchStation(userLocation[currentUser], false);
 
             case PLAY_EVENT -> playEvent();
+            case AGENT -> useAgent();
         }
         return false;
     }
@@ -666,8 +671,8 @@ public class PandemicGame {
     private static boolean checkOutbreak(int cityNumber, int noOfCubes, int cubeEnd) {
         int count = 0;
 
-        for(int i = cubeEnd - 24; i < cubeEnd; i++)
-            if (diseaseCubeCities[i] == cityNumber)
+        for(int iterator = cubeEnd - 24; iterator < cubeEnd; iterator++)
+            if (diseaseCubeCities[iterator] == cityNumber)
                 count++;
 
         return (count + noOfCubes > 3);
@@ -698,7 +703,7 @@ public class PandemicGame {
         // Infect all nine cities shown on the nine infection cards
         for(int cardCount = 0; cardCount < 6; cardCount++) {
             // The first 3 cities with 3 cubes each, and the second 3 with 2 each.
-            int cubeValue = cardCount < 3 ? 2 : 3;
+            int cubeValue = cardCount < 3 ? 3 : 2;
             int value = infectionDiscardPile.getCard(cardCount).getValue();
             int color = infectionDiscardPile.getCard(cardCount).getAttribute();
             createInfection(value, cubeValue, color);
@@ -776,6 +781,7 @@ public class PandemicGame {
             // execute epidemics and add card to the infection discard pile, or add
             // card to the user hand.
             if (card.getValue() >= 52 && card.getValue() <= 55) {
+                // Card is an Epidemic card.
                 System.out.println("Card Drawn: Epidemic.");
                 drawEpidemicCard(card);
             }
@@ -919,7 +925,7 @@ public class PandemicGame {
 
     /**
      * Draw an epidemic card. Epidemic cards are not added to the user's hand, thus they are handled,
-     * executed, put in the infection discard pile, shuffled and stacked back on top of the infection
+     * executed -- Infection card(s) is/are drawn, put in the infection discard pile, shuffled and stacked back on top of the infection
      * deck.
      * @param card
      */
@@ -1369,75 +1375,163 @@ public class PandemicGame {
         return true;
     }
 
-
+    // Makes a little advanced agent resources and abilities available to the user.
+    // If user never uses agent, agent is never available.
+    private static void useAgent() {
+        Scanner in = new Scanner(System.in);
+        System.out.print("Yes? ");
+        if(! useAgent) {
+            agentHandler = new SimpleAgent();
+            String agentName;
+            System.out.println("Initialize a name for the Agent: ");
+            agentName = in.next();
+            System.out.println("Successful @" + agentName.toUpperCase());
+            agentHandler.setAgentName(agentName);
+            useAgent = false;
+        }
+        // After the agent object has been created above, use the input feature here.
+        agentHandler.inputCommand();
+    }
     //----------------------------------------------------------- Nested Agent Class ------------------------------------------------------------------
 
     /**
      * Extends thread to run background calculations and give output. Works of an agent can be found in some
-     * methods written above. But there ae some in which the run() method has to keep running and updating the
-     * values of the private parameters
+     * methods written above. But there are some in which the run() method has to keep running and updating the
+     * values of the private parameters. Conversation is made simpler in this class.
      */
-    public class SimpleAgent extends Thread {
+    public static class SimpleAgent extends Thread {
 
+        Scanner in = new Scanner(System.in);        //For in-agent conversation activities.
         // Search through the city and user hand card and search for cubes in the cities. Print out
         // danger zones and safe zones and possibly advice on where to move next based on the cards
         // in the user's hand.
         private LinkedList<Integer> dangerZones = new LinkedList<>();
         private LinkedList<Integer> safeZones = new LinkedList<>();
         private Set<Integer> removedCards = new HashSet<>();
+        public String agentName;        // Check.
 
         private PandemicDeck deckCopy;        // A pointer to the player deck.
+
+        // Constructor
+        public SimpleAgent() {
+            this.start();
+        }
+        public void setAgentName(String name) {
+            agentName = Objects.requireNonNullElse(name, "Lily");
+            agentName = agentName.toUpperCase();
+        }
+
         public String printCardStatus(int size) {
+            String initialInfo = "    @" + agentName + " ";
+            String outputInfo;
             switch (size) {
                 case 5 -> {
                     this.interrupt();
-                    return "Critical condition!" + " Number of cards left: 5";
+                    outputInfo = "Critical condition!" + " Number of cards left: 5.";
                 }
-                case 10 -> "Cards reducing. Cards left: 10";
-                case 30 -> " Half of Deck reached, play carefully";
-            };
-
-        }
-
-        //Input String from the user
-        public void inputCommand(String userInput) {
-            System.out.print("Yes? ");
-            int cityNumber = 0;
-            String[] keyWords = {"probability", "percentage", "card", "danger", "status", "Where am I",
-             "location."};
-            String word = userInput.toLowerCase();
-            if (word.contains(keyWords[0]) || (word.contains(keyWords[0]) && word.contains(keyWords[2]))) {
-                for (String city : cities) {
-                    if (word.toLowerCase().contains(city.toLowerCase())) {
-                        getProbability(cityNumber);
-                        break;
-                    }
-                    cityNumber++;
+                case 10 -> {
+                    this.interrupt();
+                    outputInfo =  "Cards reducing. Cards left: 10";
+                }
+                case 30 -> {
+                    this.interrupt();
+                    outputInfo = "Half of Deck reached, play carefully.";
                 }
             }
-
+            return null;
         }
+
+        /**
+         * Input String from the user, Process all user's input.
+         * This is a sample class method -- Won't give an accurate answer to all user questions. Just finds Keywords
+         * in the user's input and responds appropriately to them.
+         */
+        public void inputCommand() {
+            // Variables from user;
+            int cityNumber = 0;
+            // Add more commands like asking
+            // Make this recursive.
+            String[] keyWords = {"probability", "percentage", "card", "danger", "status", "Where am I",
+                    "location", "quit", "exit", "go", "out", "leave", "odds"};
+            System.out.println("    " + agentName + " here. How may I be of help?");
+            // go location,
+            String userInput = in.nextLine();
+            String word = userInput.toLowerCase().trim();
+
+            if (word.contains(keyWords[7]) || (word.contains(keyWords[8]) && word.contains(keyWords[9]))
+             || word.contains(keyWords[10]) || word.contains(keyWords[11])) {
+                System.out.println("    I hope you request next time :) @" + usernames[currentUser]);
+                System.out.println("    Exiting Agent...");
+            }
+            else {
+                if (word.contains(keyWords[0]) || (word.contains(keyWords[0]) && word.contains(keyWords[2])) ||
+                 word.contains(keyWords[12])) {
+                    // search if any of the strings contains a city
+                    boolean found = false; int cityCount = 0;
+                    for (String city : cities) {
+                        city = city.toLowerCase();
+                        if (word.contains(city)) {
+                            found = true;
+                            break;
+                        }
+                        cityCount++;
+                    }
+                    if (found)
+                        getProbability(cityCount);
+                    else {
+                        System.out.println("    @" + agentName + "It's either a city name can't be found on input.");
+                        System.out.println("    @" + agentName + " Hint: try \"odds or probability a Atlanta card shows up.\"");
+                    }
+                }
+                else if (word.contains(keyWords[5]) || word.contains(keyWords[6])) {
+                    printUserLocations();
+                }
+                else {
+                    System.out.println(agentName + "    can't understand your input :(");
+                    // Try something?
+                }
+                System.out.println("What else can I help you with? ");
+                inputCommand();
+            }
+        }
+
+        // Probability to get a given card
         public int getProbability(int cardNumber) {
             // Write probability definition here
             deckCopy = playerDeck;      // pointer to playerDeck.
-            this.start();
+
+            System.out.println("     Disclaimer: The Probability is not 100% correct.");
+            // sh
+            for (int iterator = 0; iterator < 10000; iterator++)
+                deckCopy.shuffle();
+
+            for (int card = 0; card < deckCopy.size(); card++) {
+                // For every card in the deck.
+            }
+            this.start();           // Check this, remove or stay?
             return -1;
         }
 
+        // static?
         public void run() {
 
             while(true) {
-                if(playerDeck.size() == 5 || playerDeck.size() == 10 || playerDeck.size() == 30) {
+                if(playerDeck.size() == 5 || playerDeck.size() == 10 || playerDeck.size() == 30)
                     printCardStatus(playerDeck.size());
-                }
+
                 try {
                     Thread.sleep(8000);
                 }
                 catch (InterruptedException e) {}
             }
-
-
         }
 
+        // Method to scan various arrays to locate disease and possible outbreaks, and advice on
+        // cards to be played. Adds to the danger zones and safe zones, and prints them out, scans
+        // The current user's card and tells the user the most preferable card to play, or if the
+        // user should discard a card and draw for a lucky chance.
+        public void printStatusAndPreferableMove() {
+
+        }
     }
 }
