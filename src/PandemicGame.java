@@ -46,6 +46,7 @@ public class PandemicGame {
     private static final int BUILD_RESEARCH = 14;
     private static final int PLAY_EVENT = 15;
     private static final int AGENT = 16;
+    private static final int SOLVE_DISEASE = 17;
 
     // Extra variables for the gameplay.
     private static final int[] researchStation = new int[6];
@@ -88,7 +89,7 @@ public class PandemicGame {
      */
     private static int processUserInput(String inputString) {
         inputString = inputString.toLowerCase().trim();
-        return switch (inputString.toLowerCase().trim()) {
+        return switch (inputString) {
             case "quit" -> QUIT;
             case "location" -> PRINT_LOCATION;
             case "cities" -> PRINT_CITIES;
@@ -106,6 +107,7 @@ public class PandemicGame {
             case "build research" -> BUILD_RESEARCH;
             case "play event" -> PLAY_EVENT;
             case "agent" -> AGENT;
+            case "solve disease" -> SOLVE_DISEASE;
             default -> -1;
         };
     }
@@ -169,6 +171,8 @@ public class PandemicGame {
         System.out.println("Build Research -- Discard the card matching a city you're in.");
         System.out.println("Play Event -- Play an event card if you have one. it is considered as an action.");
         System.out.println("Agent -- Use agent and get extra help and services.");
+        System.out.println("Solve disease -- Turn in 5 cards of the same color in a research station to cure a disease of that color.");
+        System.out.println();
     }
 
     // Prints out the location of each user
@@ -185,6 +189,7 @@ public class PandemicGame {
     private static boolean processUserCommand(int userInput) {
         switch (userInput) {
             case QUIT -> {
+                gameEnded(false,"Quit.");
                 return true;
             }
             case PRINT_LOCATION -> printUserLocations();
@@ -207,6 +212,7 @@ public class PandemicGame {
 
             case PLAY_EVENT -> playEvent();
             case AGENT -> useAgent();
+            case SOLVE_DISEASE -> doSolveDisease();
         }
         return false;
     }
@@ -383,7 +389,8 @@ public class PandemicGame {
 
     }
 
-
+    // Print the list of infected cities for all 48 cities if the city is found in the diseased
+    // cubes list. Print city if checkSearch is false.
     private static void printInfectedCities() {
         for (int cityNumber = 0; cityNumber < 48; cityNumber++) {
             if (checkSearch(cityNumber)) {
@@ -393,9 +400,11 @@ public class PandemicGame {
         }
     }
 
+    // Check if the specified city number is amongst the disease cube list. Return false if city
+    // is not found.
     private static boolean checkSearch(int cityNumber) {
-        for (int city = 0; city < diseaseCubeCities.length; city++) {
-            if(cityNumber == diseaseCubeCities[city]) {
+        for (int diseaseCubeCity : diseaseCubeCities) {
+            if (cityNumber == diseaseCubeCity) {
                 return true;
             }
         }
@@ -898,7 +907,7 @@ public class PandemicGame {
                 case PandemicCard.SOLVE_DISEASE -> {
                     freeCure = true;
                     cardName = "SOLVE DISEASE";
-                    doSolveDisease(in);
+                    doSolveDisease();
                 }
                 default -> {
                     addMove = true;
@@ -1269,7 +1278,8 @@ public class PandemicGame {
 
     // Checks if the current user is in a city that contains a research station. You can cure diseases only
     // in a research station.
-    private static void doSolveDisease(Scanner in) {
+    private static void doSolveDisease() {
+        Scanner in = new Scanner(System.in);
         boolean rightLocation = false;          // variable for checking if the user is in the right location
         // Check if the user is in a research station. Diseases can only be solved in research stations
         for (int station : researchStation) {
