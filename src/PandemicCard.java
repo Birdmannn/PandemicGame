@@ -28,10 +28,6 @@ public class PandemicCard {
     public final static int SOLVE_DISEASE = 50;
     public final static int ADD_MOVE = 51;
 
-    public PandemicCard() {
-        color = BLUE;
-        value = 49;
-    }
 
     /**
      * Creates the card with specified color and value.

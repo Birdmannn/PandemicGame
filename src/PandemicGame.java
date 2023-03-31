@@ -57,10 +57,10 @@ public class PandemicGame {
     private static final int RED_CUBE = 2;
     private static final int BLACK_CUBE = 3;
     private static final int MAX_HAND_SIZE = 7;
-    private static PandemicDeck playerDeck;                     // Player Deck of cards.
-    private static PandemicDeck infectionDeck;
+    private static PandemicDeck playerDeck = new PandemicDeck(true,4);                     // Player Deck of cards.
+    private static PandemicDeck infectionDeck = new PandemicDeck();
     private static PandemicHand[] userHand;
-    private static PandemicHand infectionDiscardPile;
+    private static PandemicHand infectionDiscardPile = new PandemicHand();
     private static int outbreak;
     private static int foundCure;
     private static int infectionRate = 1;  // Increments whenever an Epidemic card is drawn
@@ -138,14 +138,13 @@ public class PandemicGame {
         return processedUserInput;
     }
 
-    // Print Adjacent cities associated with the users current location
+    // Print Adjacent cities associated with the users current location.
     private static void printAdjacentCities() {
         for(int cityNumber = 0; cityNumber < numberCities; cityNumber++) {
             if (citiesAdjacent(userLocation[currentUser], cityNumber)) {
                 System.out.println(cities[cityNumber]);
             }
         }
-
     }
 
     /**
@@ -180,7 +179,6 @@ public class PandemicGame {
             int printUserLocation = userLocation[userNumber];
             System.out.println(usernames[userNumber] + " is in " + cities[printUserLocation]);
         }
-
     }
 
     // Handle user commands with its associated methods.
@@ -423,7 +421,7 @@ public class PandemicGame {
             if (noOfUsers >= 1 && noOfUsers <= MAX_USERS) {
                 NUMBER_USERS = noOfUsers;
                 userLocation = new int[NUMBER_USERS];
-                usernames = new String[noOfUsers];      // Create an array to store the user's usernames.
+                usernames = new String[NUMBER_USERS];      // Create an array to store the user's usernames.
                 System.out.println("Type in your usernames. Press the 'Return' key to use default.");
 
                 // Start getting in usernames
@@ -439,7 +437,7 @@ public class PandemicGame {
                     usernames[position] = username;
                     // Now iterate the whole loop if there is more than one user, to make sure there are no
                     // two users of the same username.
-                    if (position > 0) {
+                    if (position > 0 && position < usernames.length) {
                         for(int iterator = 0; iterator < position; iterator++) {
                             if (usernames[position].equalsIgnoreCase(usernames[iterator])) {
                                 System.out.println("Two users can not have the same username.");
@@ -482,14 +480,17 @@ public class PandemicGame {
         System.out.println("Konnichiwaa!");
         System.out.println();
         readAndPrintGameInfo();
+
         try {
             getUsers();
             readCityGraph();
             initializeGame();
         }
         catch (Exception e) {
+            System.out.println("Error in city graph.");
             System.out.println(e.getMessage());
         }
+
         while(!gameDone || !gameOver) {
             try {
                 int userInput = getUserInput();
@@ -568,11 +569,17 @@ public class PandemicGame {
 
     // Set up data for playing the game and keeping track of activities.
     private static void initializeData() {
-        Arrays.fill(diseaseCubeCities, -1);
-        Arrays.fill(researchStation, -1);
-        researchStation[0] = 0;                 // There is one research station in Atlanta at the start of the game.
-        Arrays.fill(remainingCubes, 24);
-        researchCt++;
+        try {
+            Arrays.fill(diseaseCubeCities, -1);
+            Arrays.fill(researchStation, -1);
+            researchStation[0] = 0;                 // There is one research station in Atlanta at the start of the game.
+            Arrays.fill(remainingCubes, 24);
+            researchCt++;
+            System.out.println("Data initialized.");
+        }
+        catch (Exception e) {
+            System.out.println("Array Out of Bounds, check.");
+        }
     }
 
     // Search if a city has a research station.
@@ -714,6 +721,7 @@ public class PandemicGame {
             createInfection(infectionDiscardPile.getCard(cardCount).getValue(), 1,
                     infectionDiscardPile.getCard(cardCount).getAttribute());
         }
+        System.out.println("Cities infected successfully.");
     }
 
     /**
@@ -732,6 +740,7 @@ public class PandemicGame {
 
     // Set up the Board by infecting cities and dealing the initial cards.
     private static void setUpBoard() {
+        // Debugging phase
         infectCities();
         dealInitialCards();
         System.out.println("Type \"actions\" to view actions.");
@@ -902,8 +911,13 @@ public class PandemicGame {
     // The number of cards dealt to each user depends on the total number of users playing the game.
     private static void dealInitialCards() {
         PandemicHand hand = new PandemicHand();
+        assert !playerDeck.isEmpty();
 
-        for(int i = 0; i < 4; ++i)
+        //initialize userHand
+        for (int user = 0; user < NUMBER_USERS; user++)
+            userHand[user] = new PandemicHand();
+
+        for(int iterator = 0; iterator < 4; iterator++)
             hand.addCard(playerDeck.removeBottom());
 
         playerDeck.shuffle();
@@ -914,13 +928,17 @@ public class PandemicGame {
             default -> 2;
         };
 
-        for(int userNumber = 0; userNumber < NUMBER_USERS; userNumber++) {
-            for(int cardCt = 0; cardCt < noOfCards; cardCt++) {
+        for(int userNumber = 0; userNumber < NUMBER_USERS; userNumber++)
+            for(int cardCt = 0; cardCt < noOfCards; cardCt++)
                 userHand[userNumber].addCard(playerDeck.dealCard());
-            }
-        }
         // After dealing cards to the players, create the epidemic deck.
-        createEpidemicDeck(hand);
+        System.out.println("Cards dealt to user(s).");
+        try {
+            createEpidemicDeck(hand);
+        }
+        catch (Exception e) {
+            System.out.println("Error occurred in creating epidemic deck.");
+        }
     }
 
     /**
@@ -1013,12 +1031,19 @@ public class PandemicGame {
         System.out.println("Total number of outbreaks: " + outbreak);
     }
 
+    /**
+     * In real life, deck is cut into four "equal" halves, then the epidemic cards are added to the top
+     * of each deck. All four decks are shuffled independently, and stacked together to form the player
+     * deck. But here, we shuffle the deck, and add each epidemic card between four random slots at the
+     * the current deck size divided by four, for 0 <= iterator < 4
+     * @param hand
+     */
     private static void createEpidemicDeck(PandemicHand hand) {
         playerDeck.shuffle();
-        Random rand = new Random();
-
-        for(int iterator = 0; iterator < 4; iterator++) {
-            playerDeck.addCard(rand.nextInt(24) + iterator * 24, hand.getCard(iterator));
+        int currentDeckSize = playerDeck.size()/4;
+        for (int iterator = 0; iterator < 4; iterator++) {
+            int random = (int)(currentDeckSize*Math.random());
+            playerDeck.addCard((iterator*currentDeckSize) + random,hand.getCard(iterator));
         }
         System.out.println("Epidemic Deck has been created.");
     }
@@ -1029,10 +1054,11 @@ public class PandemicGame {
     private static void doDirectFlight(PandemicCard card, int cardNumber) {
         userLocation[currentUser] = card.getValue();
 
-        System.out.println("");
-        checkAndCountActions();
+        System.out.println();
         System.out.println("Direct Flight Successful.");
         System.out.println("You're now in " + cities[userLocation[currentUser]]);
+        removeCard(cardNumber - 1);     // discard
+        checkAndCountActions();
     }
 
     /**
@@ -1055,7 +1081,7 @@ public class PandemicGame {
             if (cityAsValue > -1) {
                 userLocation[currentUser] = cityAsValue;
                 System.out.println(usernames[currentUser] + " is now in " + cities[userLocation[currentUser]] + ".");
-                removeCard(cardNumber);         // Discard card
+                removeCard(cardNumber - 1);         // Discard card
                 checkAndCountActions();         // Counts Action
                 return;
             }
@@ -1064,10 +1090,17 @@ public class PandemicGame {
         }
     }
 
+
+    /**
+     * Process the card to handle all user errors. Work only on charter flight and direct flight for true and false
+     * respectively. Parameter below.
+     * @param doCharterFlight
+     */
     private static void processActionCard(boolean doCharterFlight) {
-        // Write something here that probably explains Charter flight?
         Scanner in = new Scanner(System.in);
         System.out.println("\nThese are the current cards in hand.");
+        // Show the user all the cards to pick from.
+        // In more advanced systems, only playable cards for the operation are printed.
         printAllCards();
         System.out.print("Please type in the card number: ");
         PandemicCard card;
@@ -1082,9 +1115,10 @@ public class PandemicGame {
                 } while (cardNumber < 1);
             } while (cardNumber > userHand[currentUser].getCardCount());
 
-            card = userHand[currentUser].getCard(cardNumber);
+            // Card is not a city card, return.
+            card = userHand[currentUser].getCard(cardNumber - 1);
             if (card.getAttribute() == PandemicCard.EVENT_CARD) {
-                System.out.println("Card is an event card. You need a city card to perform Charter Flight. Perform another action.");
+                System.out.println("Card is an event card. You need a city card. Perform another action.");
                 return;
             }
 
@@ -1437,8 +1471,9 @@ public class PandemicGame {
                     this.interrupt();
                     outputInfo = "Half of Deck reached, play carefully.";
                 }
+                default -> outputInfo = "...";
             }
-            return null;
+            return initialInfo + outputInfo;
         }
 
         /**
@@ -1447,16 +1482,14 @@ public class PandemicGame {
          * in the user's input and responds appropriately to them.
          */
         public void inputCommand() {
-            // Variables from user;
-            int cityNumber = 0;
             // Add more commands like asking
             // Make this recursive.
-            String[] keyWords = {"probability", "percentage", "card", "danger", "status", "Where am I",
+            String[] keyWords = {"probability", "percentage", "card", "danger", "status", "Where", "am", "I",
                     "location", "quit", "exit", "go", "out", "leave", "odds"};
             System.out.println("    " + agentName + " here. How may I be of help?");
             // go location,
             String userInput = in.nextLine();
-            String word = userInput.toLowerCase().trim();
+            String word = userInput.toLowerCase();
 
             if (word.contains(keyWords[7]) || (word.contains(keyWords[8]) && word.contains(keyWords[9]))
              || word.contains(keyWords[10]) || word.contains(keyWords[11])) {
@@ -1479,11 +1512,12 @@ public class PandemicGame {
                     if (found)
                         getProbability(cityCount);
                     else {
-                        System.out.println("    @" + agentName + "It's either a city name can't be found on input.");
+                        System.out.println("    @" + agentName + " It's either a city name can't be found on input.");
                         System.out.println("    @" + agentName + " Hint: try \"odds or probability a Atlanta card shows up.\"");
                     }
                 }
-                else if (word.contains(keyWords[5]) || word.contains(keyWords[6])) {
+                else if ((word.contains(keyWords[5]) && word.contains(keyWords[6]) && word.contains(keyWords[7]))
+                        || word.contains(keyWords[8])) {
                     printUserLocations();
                 }
                 else {
@@ -1496,20 +1530,18 @@ public class PandemicGame {
         }
 
         // Probability to get a given card
-        public int getProbability(int cardNumber) {
+        public void getProbability(int cardNumber) {
             // Write probability definition here
             deckCopy = playerDeck;      // pointer to playerDeck.
 
             System.out.println("     Disclaimer: The Probability is not 100% correct.");
-            // sh
+            System.out.println("Getting Probability...");
             for (int iterator = 0; iterator < 10000; iterator++)
                 deckCopy.shuffle();
 
             for (int card = 0; card < deckCopy.size(); card++) {
                 // For every card in the deck.
             }
-            this.start();           // Check this, remove or stay?
-            return -1;
         }
 
         // static?
@@ -1522,7 +1554,7 @@ public class PandemicGame {
                 try {
                     Thread.sleep(8000);
                 }
-                catch (InterruptedException e) {}
+                catch (InterruptedException ignored) {}
             }
         }
 

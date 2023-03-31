@@ -2,7 +2,7 @@
  * An object of PandemicDeck represents a deck of pandemic cards.
  * the cards belong to the class PandemicCard. The deck consists of
  * 48 cards, 12 of each 4 COLORS. Then the deck may also consist of
- * epidemic cards
+ * epidemic cards and event cards
  *
  */
 
@@ -14,7 +14,6 @@ public class PandemicDeck {
     private final LinkedList<PandemicCard> deck;
     private int cardsUsed;
     private int count = 0;
-    private boolean e;  // boolean value if any epidemic card was added.
 
     // Note that this constructor is the same as calling the latter constructor
     // with the boolean parameter equals to false.
@@ -33,7 +32,7 @@ public class PandemicDeck {
     public PandemicDeck(boolean includeEpidemic, int noOfCards) {
         deck  = new LinkedList<>();
         createDeck(includeEpidemic, noOfCards);
-        e = includeEpidemic;
+        // boolean value if any epidemic card was added.
     }
 
     private void createDeck(boolean E, int N) {
@@ -45,10 +44,11 @@ public class PandemicDeck {
         }
         if(E) {
             for(int i = 0; i < 4; i++) {
-                deck.add(new PandemicCard(count, PandemicCard.EVENT_CARD)); // card 48 to 51
+                deck.add(new PandemicCard(count, PandemicCard.EVENT_CARD));     // card 48 to 51
+                count++;
             }
             for (int color = 0; color < N; color++) {
-                deck.add(new PandemicCard(count, color));   // card 52 to last
+                deck.add(new PandemicCard(count, color));   // card 52 to last, Epidemic cards
                 count++;
             }
         }
