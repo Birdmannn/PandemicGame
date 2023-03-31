@@ -1545,11 +1545,13 @@ public class PandemicGame {
 
             System.out.println("     Disclaimer: The Probability is not 100% correct.");
             System.out.println("Getting Probability...");
+
             for (int iterator = 0; iterator < 10000; iterator++)
                 deckCopy.shuffle();
 
             for (int card = 0; card < deckCopy.size(); card++) {
                 // For every card in the deck.
+                //pick out a card
             }
         }
 
