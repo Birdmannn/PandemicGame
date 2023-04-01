@@ -1459,12 +1459,12 @@ public class PandemicGame {
         private LinkedList<Integer> safeZones = new LinkedList<>();
         private Set<Integer> removedCards = new HashSet<>();
         public String agentName;        // Check.
-
         private PandemicDeck deckCopy;        // A pointer to the player deck.
+        private int zonesCount = 0;
 
         // Constructor
         public SimpleAgent() {
-            this.start();
+            this.start();       // Start thread immediately agent is initialized.
         }
         public void setAgentName(String name) {
             agentName = Objects.requireNonNullElse(name, "Lily");
@@ -1517,6 +1517,7 @@ public class PandemicGame {
                  word.contains(keyWords[12])) {
                     // search if any of the strings contains a city
                     boolean found = false; int cityCount = 0;
+                    System.out.println("Testing: Input only city cards.");
                     for (String city : cities) {
                         city = city.toLowerCase();
                         if (word.contains(city)) {
@@ -1548,30 +1549,44 @@ public class PandemicGame {
             }
         }
 
+        public void idea() {
+            // For testing
+            if(userLocation[currentUser] == 3) {
+                this.notify();
+                System.out.println("\nCatch ya.\n");
+            }
+        }
         // Probability to get a given card
         public void getProbability(int cardNumber) {
             // Write probability definition here
             deckCopy = playerDeck;      // pointer to playerDeck.
+            List<Integer> value = new ArrayList<>();
 
+            for (int i = 0; i < deckCopy.size(); i++) {
+                value.add(deckCopy.dealCard().getValue());
+            }
             System.out.println("     Disclaimer: The Probability is not 100% correct.");
             System.out.println("Getting Probability...");
 
-            for (int iterator = 0; iterator < 10000; iterator++)
-                deckCopy.shuffle();
-
-            for (int card = 0; card < deckCopy.size(); card++) {
-                // For every card in the deck.
-                //pick out a card
+            int count = 0;
+            for (int iterator = 0; iterator < 10000; iterator++) {
+               Collections.shuffle(value, new Random());
+               if (value.indexOf(cardNumber) == 0) {
+                   count++;
+               }
             }
+
+            double probability = (double)count/10000.0;
+            System.out.println("Probability of drawing card: " + probability);
         }
 
-        // static?
         public void run() {
 
-            while(true) {
+            while (true) {
                 if(playerDeck.size() == 5 || playerDeck.size() == 10 || playerDeck.size() == 30)
                     printCardStatus(playerDeck.size());
-
+                idea();
+                checkZones();
                 try {
                     Thread.sleep(8000);
                 }
@@ -1583,8 +1598,44 @@ public class PandemicGame {
         // cards to be played. Adds to the danger zones and safe zones, and prints them out, scans
         // The current user's card and tells the user the most preferable card to play, or if the
         // user should discard a card and draw for a lucky chance.
-        public void printStatusAndPreferableMove() {
+        public void checkZones() {
+            int count = 0;
+            int cityNumber = 0;
+            while (cityNumber < 48) {
+                subLoop: for (int iterator = 0; iterator < diseaseCubeCities.length; iterator++) {
+                    if (diseaseCubeCities[iterator] == cityNumber)
+                        count++;    // check for danger.
+                    if (count == 3) {
+                        // once it's up to three, then it is a danger zone
+                        dangerZones.add(cityNumber);
+                        break subLoop;
+                    }
+                    else
+                        safeZones.add(cityNumber);
+                }
+                cityNumber++;
+                count = 0;
+                zonesCount++;
+            }
+            if (zonesCount > 25)
+                printStatusAndPreferableMove();
+        }
 
+        // Traverse all array positions in user hand, in danger zones and in adjacent cities.
+        public void printStatusAndPreferableMove() {
+            if(dangerZones.size() > safeZones.size()*3) {
+                System.out.println("Disease spread in critical condition.");
+            }
+            // for all user cards, for all danger zones, and for all adjacent cities...
+            for (PandemicCard card : userHand[currentUser].getCardArray()) {
+                if(card.getAttribute() != PandemicCard.EVENT_CARD) {
+                    for (int zone : dangerZones) {
+                        if (card.getValue() != zone) {
+                            System.out.println(cities[card.getValue()] + " " + card.getAttributeAsString() + ": recommended.");
+                        }
+                    }
+                }
+            }
         }
     }
 }
