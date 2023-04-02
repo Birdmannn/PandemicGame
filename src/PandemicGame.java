@@ -90,22 +90,22 @@ public class PandemicGame {
     private static int processUserInput(String inputString) {
         inputString = inputString.toLowerCase().trim();
         return switch (inputString) {
-            case "quit" -> QUIT;
-            case "location" -> PRINT_LOCATION;
-            case "cities" -> PRINT_CITIES;
-            case "connections" -> PRINT_CONNECTIONS;
-            case "adjacent" -> PRINT_ADJACENT_CITIES;
-            case "infections" -> PRINT_DISEASES;
-            case "move" -> MOVE;
-            case "treat disease" -> TREAT_DISEASE;
+            case "quit", "exit", "out" -> QUIT;
+            case "location", "where am i", "my location" -> PRINT_LOCATION;
+            case "cities", "available cities", "get cities", "print cities" -> PRINT_CITIES;
+            case "connections", "get connections", "print connections" -> PRINT_CONNECTIONS;
+            case "adjacent", "city links", "links" -> PRINT_ADJACENT_CITIES;
+            case "infections", "infected cities" -> PRINT_DISEASES;
+            case "move", "travel" -> MOVE;
+            case "treat disease", "cure disease" -> TREAT_DISEASE;
             case "actions", "help" -> PRINT_ACTIONS;
-            case "print cards" -> PRINT_CARDS;
-            case "get status" -> GET_STATUS;
+            case "print cards", "hand" -> PRINT_CARDS;
+            case "get status", "status" -> GET_STATUS;
             case "direct flight" -> DIRECT_FLIGHT;
             case "charter flight" -> CHARTER_FLIGHT;
             case "shuttle flight" -> SHUTTLE_FLIGHT;
             case "build research" -> BUILD_RESEARCH;
-            case "play event" -> PLAY_EVENT;
+            case "play event", "event" -> PLAY_EVENT;
             case "agent" -> AGENT;
             case "solve disease" -> SOLVE_DISEASE;
             default -> -1;
@@ -1492,6 +1492,7 @@ public class PandemicGame {
             return initialInfo + outputInfo;
         }
 
+
         /**
          * Input String from the user, Process all user's input.
          * This is a sample class method -- Won't give an accurate answer to all user questions. Just finds Keywords
@@ -1505,43 +1506,38 @@ public class PandemicGame {
             System.out.println("    " + agentName + " here. How may I be of help?");
             // go location,
             String userInput = in.nextLine();
-            String word = userInput.toLowerCase();
+            String words = userInput.toLowerCase();
 
-            if (word.contains(keyWords[9]) || (word.contains(keyWords[10]) && word.contains(keyWords[11]))
-             || word.contains(keyWords[12]) || word.contains(keyWords[13])) {
+            String[] keyWord = words.split(" ");
+
+            // for testing
+            for(String word : keyWord) {
+                switch (word) {
+                    case "probability", "percentage", "card", "odds" -> doProbability(words);
+                    default -> System.out.println("   @" + agentName + " can't decipher input.");
+                }
+            }
+
+            if (words.contains(keyWords[9]) || (words.contains(keyWords[10]) && words.contains(keyWords[11]))
+             || words.contains(keyWords[12]) || words.contains(keyWords[13])) {
                 System.out.println("    I hope you request next time :) @" + usernames[currentUser]);
                 System.out.println("    Exiting Agent...");
             }
             else {
-                if (word.contains(keyWords[0]) || (word.contains(keyWords[0]) && word.contains(keyWords[2])) ||
-                 word.contains(keyWords[12])) {
+                if (words.contains(keyWords[0]) || (words.contains(keyWords[0]) && words.contains(keyWords[2])) ||
+                 words.contains(keyWords[14])) {
                     // search if any of the strings contains a city
-                    boolean found = false; int cityCount = 0;
-                    System.out.println("Testing: Input only city cards.");
-                    for (String city : cities) {
-                        city = city.toLowerCase();
-                        if (word.contains(city)) {
-                            found = true;
-                            break;
-                        }
-                        cityCount++;
-                    }
-                    if (found)
-                        getProbability(cityCount);
-                    else {
-                        System.out.println("    @" + agentName + " It's either a city name can't be found on input.");
-                        System.out.println("    @" + agentName + " Hint: try \"odds or probability a Atlanta card shows up.\"");
-                    }
+
                 }
-                else if ((word.contains(keyWords[5]) && word.contains(keyWords[6]) && word.contains(keyWords[7]))
-                        || word.contains(keyWords[8])) {
+                else if ((words.contains(keyWords[5]) && words.contains(keyWords[6]) && words.contains(keyWords[7]))
+                        || words.contains(keyWords[8])) {
                     printUserLocations();
                 }
-                else if (word.contains("deck") && word.contains("size")) {
+                else if (words.contains("deck") && words.contains("size")) {
                     System.out.println("Cards in deck: " + playerDeck.size());
                 }
                 else {
-                    System.out.println(agentName + "    can't understand your input :(");
+                    System.out.println("    @" + agentName + " can't understand your input :(");
                     // Try something?
                 }
                 System.out.println("What else can I help you with? ");
@@ -1549,11 +1545,22 @@ public class PandemicGame {
             }
         }
 
-        public void idea() {
-            // For testing
-            if(userLocation[currentUser] == 3) {
-                this.notify();
-                System.out.println("\nCatch ya.\n");
+        public void doProbability(String words) {
+            boolean found = false; int cityCount = 0;
+            System.out.println("Testing: Input only city cards.");
+            for (String city : cities) {
+                city = city.toLowerCase();
+                if (words.contains(city)) {
+                    found = true;
+                    break;
+                }
+                cityCount++;
+            }
+            if (found)
+                getProbability(cityCount);
+            else {
+                System.out.println("    @" + agentName + " It's either a city name can't be found on input.");
+                System.out.println("    @" + agentName + " Hint: try \"odds or probability a Atlanta card shows up.\"");
             }
         }
         // Probability to get a given card
@@ -1585,7 +1592,6 @@ public class PandemicGame {
             while (true) {
                 if(playerDeck.size() == 5 || playerDeck.size() == 10 || playerDeck.size() == 30)
                     printCardStatus(playerDeck.size());
-                idea();
                 checkZones();
                 try {
                     Thread.sleep(8000);
@@ -1617,7 +1623,7 @@ public class PandemicGame {
                 count = 0;
                 zonesCount++;
             }
-            if (zonesCount > 25)
+            if (zonesCount > 25 && playerDeck.size() < 24)
                 printStatusAndPreferableMove();
         }
 
@@ -1627,15 +1633,18 @@ public class PandemicGame {
                 System.out.println("Disease spread in critical condition.");
             }
             // for all user cards, for all danger zones, and for all adjacent cities...
-            for (PandemicCard card : userHand[currentUser].getCardArray()) {
+            mainLoop: for (PandemicCard card : userHand[currentUser].getCardArray()) {
                 if(card.getAttribute() != PandemicCard.EVENT_CARD) {
                     for (int zone : dangerZones) {
                         if (card.getValue() != zone) {
                             System.out.println(cities[card.getValue()] + " " + card.getAttributeAsString() + ": recommended.");
+                            break mainLoop;
                         }
                     }
                 }
             }
         }
+
+        // Create planning
     }
 }
