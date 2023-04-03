@@ -1,0 +1,53 @@
+The user/users have to beat the game. It is a cooperative game in which the user/users either wins or loses. 
+There are two decks of cards to draw from. The Player Deck and the infection deck.
+
+Definition: For this game, the player deck contains a total of 56 cards -- 
+   48 for each city on the map (city cards, 12 of each color)
+   4 Epidemic cards
+   and 4 Special Event cards.
+
+The infection card only contains city cards, when drawn, a disease cube odf a color is added to the city depicted on the card drawn with it's corresponding color.
+(Remember each card has a color from amongst four colors spread evenly among the 48 cards)
+
+Epidemic Cards are cards that forces the user to draw a card from the infection deck.
+This adds three new disease cubes to the city shown on the infection card drawn with its associated color. 
+In every epidemic card picked, the infection rate increases by 1, in the sense that when another epidemic card is picked, the user draws two infection cards, and so on.
+
+There is a total of 96 cubes.
+
+There is a research station in the fist CDC city of Atlanta, see actions in the game. A research station is only where a disease can be cured.
+
+
+Initialization: All four epidemic cards are removed from the player deck, then the deck is shuffled and dealt out to the players.
+The number of cards dealt depends on the number of players.
+
+Then the deck is cut out into four equal sizes, each epidemic card that had been removed prior to the dealing is added at the top of each deck.
+
+Each deck is shuffled independently, and all stacked up to form a single pile.
+
+The Infection deck is shuffled and nine cards are dealt out for initial infections of random cities to start the game.
+The cities on the first three cads get three disease cubes with it's associated color each.
+The cities on the second two get two each.
+And the last one get one disease cube each.
+
+The nine cards are kept in the infection discard pile, waiting for an epidemic card to be drawn before it is shuffled and added back to the top of the deck.
+
+
+Gameplay: 
+A player must perform up to four moves in the right order in a given turn.
+A player must perform actions (See actions and descriptions in the game)
+A player must draw a card from the player deck
+And lastly, a player must draw a card from the infection deck.
+
+When a card is drawn from the infection deck, a cube of the associated color is placed in the associated city.
+
+When there is more than three disease cubes on a city, an outbreak occurs.
+When an outbreak occurs, a fourth cube is not added to the city (No city can have 4 of the same cubes of the same color),
+the disease cube of the outbreak color is added one each to all adjacent/linked cities around the outbreak city.
+
+Game is lost when 
+   you have a total of 8 outbreaks
+   when you run out of player cards
+   when you run out of disease cubes
+
+You win if you have found the cure for all four diseases.
