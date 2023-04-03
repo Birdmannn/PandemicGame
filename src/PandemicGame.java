@@ -1471,7 +1471,7 @@ public class PandemicGame {
             agentName = agentName.toUpperCase();
         }
 
-        public String printCardStatus(int size) {
+        public void printCardStatus(int size) {
             String initialInfo = "    @" + agentName + " ";
             String outputInfo;
             switch (size) {
@@ -1489,9 +1489,8 @@ public class PandemicGame {
                 }
                 default -> outputInfo = "...";
             }
-            return initialInfo + outputInfo;
+            System.out.println(initialInfo + outputInfo);
         }
-
 
         /**
          * Input String from the user, Process all user's input.
