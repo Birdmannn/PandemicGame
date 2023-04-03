@@ -1625,6 +1625,11 @@ public class PandemicGame {
             // for all user cards, for all danger zones, and for all adjacent cities...
             mainLoop: for (PandemicCard card : userHand[currentUser].getCardArray()) {
                 if(card.getAttribute() != PandemicCard.EVENT_CARD) {
+                    for (int city : researchStation) {
+                        if (card.getValue() == city) {
+                            System.out.println("Remember there is a research station in " + cities[card.getValue()]);
+                        }
+                    }
                     for (int zone : dangerZones) {
                         if (card.getValue() != zone) {
                             System.out.println(cities[card.getValue()] + " " + card.getAttributeAsString() + ": recommended.");
