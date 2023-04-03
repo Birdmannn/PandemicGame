@@ -1508,16 +1508,6 @@ public class PandemicGame {
             String userInput = in.nextLine();
             String words = userInput.toLowerCase();
 
-            String[] keyWord = words.split(" ");
-
-            // for testing
-            for(String word : keyWord) {
-                switch (word) {
-                    case "probability", "percentage", "card", "odds" -> doProbability(words);
-                    default -> System.out.println("   @" + agentName + " can't decipher input.");
-                }
-            }
-
             if (words.contains(keyWords[9]) || (words.contains(keyWords[10]) && words.contains(keyWords[11]))
              || words.contains(keyWords[12]) || words.contains(keyWords[13])) {
                 System.out.println("    I hope you request next time :) @" + usernames[currentUser]);
@@ -1527,6 +1517,7 @@ public class PandemicGame {
                 if (words.contains(keyWords[0]) || (words.contains(keyWords[0]) && words.contains(keyWords[2])) ||
                  words.contains(keyWords[14])) {
                     // search if any of the strings contains a city
+                    doProbability(words);
 
                 }
                 else if ((words.contains(keyWords[5]) && words.contains(keyWords[6]) && words.contains(keyWords[7]))
